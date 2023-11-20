@@ -15,17 +15,17 @@ using TopologyTools.ReaderWriter;
 namespace TopologyTools.Utils
 {
     public sealed class OperationTimer : IDisposable
-	{
-		readonly string m_operation;
-		readonly Stopwatch m_stopWatch;
+    {
+        private readonly string m_operation;
+        private readonly Stopwatch m_stopWatch;
 
-		public OperationTimer(string operation)
-		{
-			m_operation = operation;
+        public OperationTimer(string operation)
+        {
+            m_operation = operation;
 
-			m_stopWatch = new Stopwatch();
-			m_stopWatch.Start();
-		}
+            m_stopWatch = new Stopwatch();
+            m_stopWatch.Start();
+        }
 
         public void Stop()
         {
@@ -33,34 +33,34 @@ namespace TopologyTools.Utils
         }
 
         public TimeSpan ElapsedTime
-	    {
+        {
             get { return new TimeSpan(m_stopWatch.ElapsedTicks); }
-	    }
+        }
 
-	    public string ElapsedTimeMessage
-	    {
-	        get
-	        {
+        public string ElapsedTimeMessage
+        {
+            get
+            {
                 //return String.Format(CultureInfo.InvariantCulture,
                 //    "耗时{0}小时{1}分{2}秒{3}毫秒\n", ElapsedTime.Hours, ElapsedTime.Minutes, ElapsedTime.Seconds, ElapsedTime.Milliseconds);
                 return String.Format(CultureInfo.InvariantCulture,
                     "耗时{0}秒\n", ElapsedTime.TotalSeconds);
-	        }
-	    }
+            }
+        }
 
-		/// <summary>
-		/// Report the elapsed time and stop the stopwatch.
-		/// </summary>
-		public void Dispose()
-		{
-			if (!m_stopWatch.IsRunning) return;
+        /// <summary>
+        /// Report the elapsed time and stop the stopwatch.
+        /// </summary>
+        public void Dispose()
+        {
+            if (!m_stopWatch.IsRunning) return;
 
-			m_stopWatch.Stop();
-			System.Diagnostics.Trace.WriteLine(String.Format(CultureInfo.InvariantCulture, "{0} time: {1} ms", m_operation, m_stopWatch.ElapsedMilliseconds));
-		}
+            m_stopWatch.Stop();
+            System.Diagnostics.Trace.WriteLine(String.Format(CultureInfo.InvariantCulture, "{0} time: {1} ms", m_operation, m_stopWatch.ElapsedMilliseconds));
+        }
 
-	    public Func<string, bool> PostDispose { get; set; }
-	}
+        public Func<string, bool> PostDispose { get; set; }
+    }
 
     public class PolygonHoleHelper
     {
@@ -123,7 +123,7 @@ namespace TopologyTools.Utils
                 }
             }
 
-            // 
+            //
             if (objectIds.Count() > 0)
             {
                 var count = objectIds.Count();
@@ -167,7 +167,7 @@ namespace TopologyTools.Utils
             // 外边界
             Point3d pickedPoint;
             if (!SelectPolylineEntity("\n选择要扣除面积的地块界线: ", "\n实体错误", out parcelId, out pickedPoint)
-                || parcelId == ObjectId.Null) 
+                || parcelId == ObjectId.Null)
                 return;
 
             // 检查地块是否封闭
@@ -232,9 +232,9 @@ namespace TopologyTools.Utils
             return false;
         }
 
-        static PromptSelectionResult StartSelectPolyline(bool singleOnly)
+        private static PromptSelectionResult StartSelectPolyline(bool singleOnly)
         {
-             //过滤选择polyline
+            //过滤选择polyline
             var tvs = new[]
             {
                 new TypedValue((int) DxfCode.Operator, "<or"),
@@ -250,6 +250,7 @@ namespace TopologyTools.Utils
             return result;
         }
 
+        //Note 最简单的处理 设置其面积为负数
         public static int SetHolePolygons(Database database, ObjectId[] holeIds)
         {
             int count = 0;
@@ -326,6 +327,9 @@ namespace TopologyTools.Utils
             return false;
         }
 
+        //TODO 改造成返回值为 List<KeyValuePair<ObjectId,List<ObjectId>>>
+        //TODO 结合之前橄榄山做板面标注时 使用 NTS 得到的数据结构
+        //洞口pair列表 一个多边形 可能包含多个洞口
         public static List<ObjectId> FindPotentialHoles(Document document)
         {
             var polylineIds = CadUtils.FindAllPolylines(document);
@@ -363,7 +367,7 @@ namespace TopologyTools.Utils
                     }
                 }
 
-                // 遍历多边形，如果有洞，开始计算 
+                // 遍历多边形，如果有洞，开始计算
                 foreach (var polygon in polygons)
                 {
                     //看看是否包含洞
@@ -376,13 +380,13 @@ namespace TopologyTools.Utils
                         if (hole == null)
                             continue;
 
-                        var holeId = (ObjectId) hole.UserData;
+                        var holeId = (ObjectId)hole.UserData;
                         if (possibleHoleIds.Contains(holeId) // 不是潜在的地块
                             && !hole.Equals(polygon) // 不是同一个多边形
                             && hole.UserData != polygon.UserData // 不是自己
                             && hole.Within(polygon))  // 有洞！
                         {
-                            hashSetObjIds.Add(holeId); // 
+                            hashSetObjIds.Add(holeId); //
                         }
                     }
                 }
@@ -429,7 +433,6 @@ namespace TopologyTools.Utils
                 //ObjectId[] entityIds = GroupUtils.GetGroupedObjects(ent);
                 //foreach (ObjectId entityId in entityIds)
                 //{
-
                 //}
                 var realId = ParcelPolygon.FindParcelOfHole(tr, ent);
                 if (realId.IsNull)
@@ -482,7 +485,7 @@ namespace TopologyTools.Utils
                     }
                 }
 
-                // 遍历多边形，如果有洞，开始计算 
+                // 遍历多边形，如果有洞，开始计算
                 foreach (var polygon in polygons)
                 {
                     // 找洞
@@ -511,7 +514,6 @@ namespace TopologyTools.Utils
                                 linearRing.Reverse();
                             linearRings.Add(linearRing);
                         }
-
                     }
                     IPolygon newPolygon = reader.GeometryFactory.CreatePolygon(polygon.Shell, linearRings.ToArray());
                     dictionary.Add(polygonId, newPolygon.Area);
@@ -545,7 +547,7 @@ namespace TopologyTools.Utils
 
                 var possibleHoleIds = new List<ObjectId>();
 
-                // 便利多边形，如果有洞，开始计算 
+                // 便利多边形，如果有洞，开始计算
                 foreach (var polygon in polygons)
                 {
                     // 找洞
@@ -573,7 +575,7 @@ namespace TopologyTools.Utils
             public Dictionary<ObjectId, IPolygon> Polygons { get; set; }
         }
 
-        static TopoData BuildTopology()
+        private static TopoData BuildTopology()
         {
             var polylineIds = CadUtils.FindAllPolylines(Application.DocumentManager.MdiActiveDocument);
             var datebase = Application.DocumentManager.MdiActiveDocument.Database;
@@ -606,14 +608,14 @@ namespace TopologyTools.Utils
             }
         }
 
-        static Dictionary<ObjectId, IList<ObjectId>> GetPolygonHasHole(Database database,
+        private static Dictionary<ObjectId, IList<ObjectId>> GetPolygonHasHole(Database database,
             Quadtree<IGeometry> quadtree, IEnumerable<IPolygon> polygons)
         {
             var dictionary = new Dictionary<ObjectId, IList<ObjectId>>();
             var possibleHoleIds = new List<ObjectId>();
             using (var tr = database.TransactionManager.StartTransaction())
             {
-                // 便利多边形，如果有洞，开始计算 
+                // 便利多边形，如果有洞，开始计算
                 foreach (var polygon in polygons)
                 {
                     // 找洞
@@ -623,7 +625,7 @@ namespace TopologyTools.Utils
                         var insidePolygon = geom as IPolygon;
                         if (insidePolygon != null)
                         {
-                            var objectId = (ObjectId) insidePolygon.UserData;
+                            var objectId = (ObjectId)insidePolygon.UserData;
                             var dbObj = tr.GetObject(objectId, OpenMode.ForRead);
 
                             // 必须是孔洞
@@ -641,7 +643,7 @@ namespace TopologyTools.Utils
                     }
 
                     // 算面积
-                    var polygonId = (ObjectId) polygon.UserData;
+                    var polygonId = (ObjectId)polygon.UserData;
                     if (insidePolygons.Any())
                     {
                         var objectIds = new List<ObjectId>();
@@ -763,7 +765,7 @@ namespace TopologyTools.Utils
 
             public void AddHoleId(ObjectId holeId)
             {
-                var holeIds = new [] {holeId};
+                var holeIds = new[] { holeId };
                 AddHoleIds(holeIds);
             }
 
@@ -785,7 +787,7 @@ namespace TopologyTools.Utils
                 return new ObjectId[0];
             }
 
-            static void AddHolesToEntityGroup(ObjectId parcelId, ObjectId[] holeIds)
+            private static void AddHolesToEntityGroup(ObjectId parcelId, ObjectId[] holeIds)
             {
                 // 看是否存在组，如果没有，直接新建一个
                 var groupId = GroupUtils.FindEntityGroupId(parcelId);
@@ -794,7 +796,7 @@ namespace TopologyTools.Utils
                 AddHolesToParcel(parcelId, groupId, holeIds);
             }
 
-            static void AddHolesToParcel(ObjectId parcelId, ObjectId groupId, ObjectId[] holeIds)
+            private static void AddHolesToParcel(ObjectId parcelId, ObjectId groupId, ObjectId[] holeIds)
             {
                 Database database = parcelId.Database;
                 // 将扣除的孔洞等图形放到孔洞图层，以绿色醒目显示
@@ -942,12 +944,12 @@ namespace TopologyTools.Utils
                             }
                         }
                     }
-                    
+
                     tr.Commit();
                 }
             }
 
-            static bool IsPolygonHasHole(Transaction tr, Entity entity)
+            private static bool IsPolygonHasHole(Transaction tr, Entity entity)
             {
                 ObjectId[] entityIds = GroupUtils.GetGroupedObjects(tr, entity);
                 foreach (ObjectId entityId in entityIds)

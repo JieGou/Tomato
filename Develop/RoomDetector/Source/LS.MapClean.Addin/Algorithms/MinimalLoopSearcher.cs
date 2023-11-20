@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Security.Policy;
-using Autodesk.AutoCAD.ApplicationServices;
+﻿using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
@@ -12,6 +7,11 @@ using GeoAPI.Geometries;
 using LS.MapClean.Addin.Utils;
 using NetTopologySuite.Index.Quadtree;
 using QuickGraph;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Security.Policy;
 using TopologyTools.ReaderWriter;
 using TopologyTools.Utils;
 
@@ -26,29 +26,47 @@ namespace LS.MapClean.Addin.Algorithms
         //}
 
         private IEnumerable<ObjectId> _idsInLoop;
+
         public IEnumerable<ObjectId> IdsInLoop
         {
             get { return _idsInLoop; }
         }
 
         private IEnumerable<Region> _regions;
+
         public IEnumerable<Region> Regions
         {
             get { return _regions; }
         }
 
         private Transaction _transaction;
+
         public MinimalLoopSearcher(Transaction transaction)
         {
             if (transaction == null)
+            {
                 throw new ArgumentNullException("transaction");
+            }
+
             _transaction = transaction;
         }
 
-        public void Check(IEnumerable<ObjectId> selectedObjectIds)
+        //Edit By陈杰 2019年8月6日 21:00:39
+        //修改内容：
+        //1.去除Region对象的布尔运算——因为会直接修改Region对象
+        //2.把regen对象原样输出
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="selectedObjectIds"></param>
+        /// <param name="regions"></param>
+        public void Check(IEnumerable<ObjectId> selectedObjectIds, out List<Region> regions)
         {
+            regions = new List<Region>();
             if (!selectedObjectIds.Any())
+            {
                 return;
+            }
 
             var watch = Stopwatch.StartNew();
             // Build a quick graph by using KdTreeCurveGraphBuilder
@@ -59,14 +77,16 @@ namespace LS.MapClean.Addin.Algorithms
             var paths = graphBuilderKdTree.SearchLoops();
             //_minimalLoops = PostProcessLoops(loops);
             var ids = new HashSet<ObjectId>();
-            var regions = new List<Region>();
+
             foreach (var path in paths)
             {
                 var loop = new Loop(path);
                 // Region sometimes couldn't be created, don't know the reason.
                 var region = loop.CreateRegion(_transaction);
                 if (region == null)
+                {
                     continue;
+                }
 
                 var loopIds = loop.IdsInLoop();
                 foreach (var id in loopIds)
@@ -76,7 +96,7 @@ namespace LS.MapClean.Addin.Algorithms
                 regions.Add(region);
             }
             _idsInLoop = ids;
-            _regions = BoolOperationRegions(regions);
+            //_regions = BoolOperationRegions(regions);
 
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
@@ -86,10 +106,14 @@ namespace LS.MapClean.Addin.Algorithms
         private List<Region> BoolOperationRegions(List<Region> regions)
         {
             if (regions.Count == 0 || regions.Count == 1)
+            {
                 return regions;
+            }
 
-            var results = new List<Region>();
-            results.Add(regions[0]);
+            var results = new List<Region>
+            {
+                regions[0]
+            };
             regions.RemoveAt(0);
 
             while (regions.Count > 0)
@@ -100,9 +124,11 @@ namespace LS.MapClean.Addin.Algorithms
                 {
                     var newRegion = BoolOperationRegions(left, right);
                     if (newRegion != null)
+                    {
                         newRegions.Add(newRegion);
+                    }
                 }
-                
+
                 results.Add(right);
                 results.AddRange(newRegions);
                 regions.RemoveAt(0);
@@ -161,7 +187,7 @@ namespace LS.MapClean.Addin.Algorithms
                 bigClone.Dispose();
                 smallClone.Dispose();
             }
-            else if (bigClone.Area.EqualsWithTolerance(0.0) || 
+            else if (bigClone.Area.EqualsWithTolerance(0.0) ||
                 bigClone.Area.EqualsWithTolerance(bigRegion.Area)) // No intersect
             {
                 bigClone.Dispose();
@@ -196,6 +222,7 @@ namespace LS.MapClean.Addin.Algorithms
             }
             return true;
         }
+
         //private IEnumerable<Loop> PostProcessLoops(IEnumerable<SEdge<CurveVertex>[]> paths)
         //{
         //    var loops = new List<Loop>();
@@ -206,7 +233,7 @@ namespace LS.MapClean.Addin.Algorithms
         //    }
         //    var count = loops.Count;
         //    for (int i = 0; i < count - 1; i++)
-        //    { 
+        //    {
         //        for (int j = i + 1; j < count; j++)
         //        {
         //            var newLoops = Loop.BooleanOperation(loops[i], loops[j]);
@@ -224,7 +251,7 @@ namespace LS.MapClean.Addin.Algorithms
         //            }
         //        }
         //    }
-            
+
         //    return loops;
         //}
 
@@ -238,7 +265,7 @@ namespace LS.MapClean.Addin.Algorithms
         //        }
         //        _minimalLoops = null;
         //    }
-            
+
         //}
 
         public void Dispose()
@@ -276,7 +303,9 @@ namespace LS.MapClean.Addin.Algorithms
         {
             var ids = IdsInLoop();
             if (!ids.Any())
+            {
                 return null;
+            }
 
             Region result = null;
             try
@@ -294,7 +323,9 @@ namespace LS.MapClean.Addin.Algorithms
                 var regions = Region.CreateFromCurves(linearObjects);
                 // I'm sure there is only one region.
                 if (regions.Count > 0)
+                {
                     result = (Region)regions[0];
+                }
 #if DEBUG
                 if (regions.Count != 1)
                 {
@@ -309,11 +340,9 @@ namespace LS.MapClean.Addin.Algorithms
             }
             catch (Exception)
             {
-
             }
             return result;
         }
-
 
         public IEnumerable<ObjectId> IdsInLoop()
         {
@@ -321,232 +350,234 @@ namespace LS.MapClean.Addin.Algorithms
             foreach (var sEdge in _edges)
             {
                 if (sEdge.Source.Id != sEdge.Target.Id)
+                {
                     continue;
+                }
+
                 result.Add(sEdge.Source.Id);
             }
             return result;
         }
-
     }
 
-//    public class Loop : IDisposable
-//    {
-//        public Guid Id { get; private set; }
+    //    public class Loop : IDisposable
+    //    {
+    //        public Guid Id { get; private set; }
 
-//        /// <summary>
-//        /// Vertices
-//        /// </summary>
-//        private List<CurveVertex> _vertices = new List<CurveVertex>();
-//        public List<CurveVertex> Vertices
-//        {
-//            get { return _vertices; }
-//        }
+    //        /// <summary>
+    //        /// Vertices
+    //        /// </summary>
+    //        private List<CurveVertex> _vertices = new List<CurveVertex>();
+    //        public List<CurveVertex> Vertices
+    //        {
+    //            get { return _vertices; }
+    //        }
 
-//        /// <summary>
-//        /// Region created by edges.
-//        /// </summary>
-//        private Region _region = null;
-//        public Region Region
-//        {
-//            get
-//            {
-//                if (_region == null)
-//                {
-//                    try
-//                    {
-//                        CreateRegion();
-//                    }
-//                    catch
-//                    {
-//                    }
-//                }
-//                return _region;
-//            }
-//        }
+    //        /// <summary>
+    //        /// Region created by edges.
+    //        /// </summary>
+    //        private Region _region = null;
+    //        public Region Region
+    //        {
+    //            get
+    //            {
+    //                if (_region == null)
+    //                {
+    //                    try
+    //                    {
+    //                        CreateRegion();
+    //                    }
+    //                    catch
+    //                    {
+    //                    }
+    //                }
+    //                return _region;
+    //            }
+    //        }
 
-//        public Loop()
-//        {
-//            Id = Guid.NewGuid();
-//        }
+    //        public Loop()
+    //        {
+    //            Id = Guid.NewGuid();
+    //        }
 
-//        public Loop(IEnumerable<SEdge<CurveVertex>> edges)
-//            : this()
-//        {
-//            foreach (var sEdge in edges)
-//            {
-//                // Every loop start from target to source.
-//                if (!_vertices.Contains(sEdge.Target))
-//                    _vertices.Add(sEdge.Target);
-//                if (!_vertices.Contains(sEdge.Source))
-//                    _vertices.Add(sEdge.Source);
-//            }
-//        }
+    //        public Loop(IEnumerable<SEdge<CurveVertex>> edges)
+    //            : this()
+    //        {
+    //            foreach (var sEdge in edges)
+    //            {
+    //                // Every loop start from target to source.
+    //                if (!_vertices.Contains(sEdge.Target))
+    //                    _vertices.Add(sEdge.Target);
+    //                if (!_vertices.Contains(sEdge.Source))
+    //                    _vertices.Add(sEdge.Source);
+    //            }
+    //        }
 
-//        private void CreateRegion()
-//        {
-//            var ids = IdsInLoop();
-//            if (!ids.Any())
-//                return;
+    //        private void CreateRegion()
+    //        {
+    //            var ids = IdsInLoop();
+    //            if (!ids.Any())
+    //                return;
 
-//            var database = ids.First().Database;
-//            using (var transaction = database.TransactionManager.StartTransaction())
-//            {
-//                var linearObjects = new DBObjectCollection();
-//                foreach (var objectId in ids)
-//                {
-//                    var entity = transaction.GetObject(objectId, OpenMode.ForRead) as Entity;
-//                    if (entity is Line || entity is Arc || entity is Polyline || entity is Polyline2d)
-//                    {
-//                        linearObjects.Add(entity);
-//                    }
-//                }
+    //            var database = ids.First().Database;
+    //            using (var transaction = database.TransactionManager.StartTransaction())
+    //            {
+    //                var linearObjects = new DBObjectCollection();
+    //                foreach (var objectId in ids)
+    //                {
+    //                    var entity = transaction.GetObject(objectId, OpenMode.ForRead) as Entity;
+    //                    if (entity is Line || entity is Arc || entity is Polyline || entity is Polyline2d)
+    //                    {
+    //                        linearObjects.Add(entity);
+    //                    }
+    //                }
 
-//                var regions = Region.CreateFromCurves(linearObjects);
-//                // I'm sure there is only one region.
-//                if (regions.Count > 0)
-//                    _region = (Region)regions[0];
-//#if DEBUG
-//                if (regions.Count != 1)
-//                {
-//                    System.Diagnostics.Debug.WriteLine("Error: {0} regions are created", regions.Count);
-//                }
-//#endif
+    //                var regions = Region.CreateFromCurves(linearObjects);
+    //                // I'm sure there is only one region.
+    //                if (regions.Count > 0)
+    //                    _region = (Region)regions[0];
+    //#if DEBUG
+    //                if (regions.Count != 1)
+    //                {
+    //                    System.Diagnostics.Debug.WriteLine("Error: {0} regions are created", regions.Count);
+    //                }
+    //#endif
 
-//                transaction.Commit();
-//            }
-//        }
+    //                transaction.Commit();
+    //            }
+    //        }
 
-//        public IEnumerable<Point3d> PointsOfLoop()
-//        {
-//            var result = new List<Point3d>();
-//            foreach (var vertex in _vertices)
-//            {
-//                // If edge is reversed, target and source are reverse.
-//                if (!result.Contains(vertex.Point))
-//                    result.Add(vertex.Point);
-//            }
-//            return result;
-//        }
+    //        public IEnumerable<Point3d> PointsOfLoop()
+    //        {
+    //            var result = new List<Point3d>();
+    //            foreach (var vertex in _vertices)
+    //            {
+    //                // If edge is reversed, target and source are reverse.
+    //                if (!result.Contains(vertex.Point))
+    //                    result.Add(vertex.Point);
+    //            }
+    //            return result;
+    //        }
 
-//        public void Dispose()
-//        {
-//            if (_region != null)
-//                _region.Dispose();
-//            _region = null;
-//        }
+    //        public void Dispose()
+    //        {
+    //            if (_region != null)
+    //                _region.Dispose();
+    //            _region = null;
+    //        }
 
-//        public IEnumerable<ObjectId> IdsInLoop()
-//        {
-//            var groups = _vertices.GroupBy(x => x.Id)
-//                .Where(x => x.Count() > 1);
-//            return groups.Select(it => it.Key).ToList();
-//        }
+    //        public IEnumerable<ObjectId> IdsInLoop()
+    //        {
+    //            var groups = _vertices.GroupBy(x => x.Id)
+    //                .Where(x => x.Count() > 1);
+    //            return groups.Select(it => it.Key).ToList();
+    //        }
 
-//        #region Static methods
-//        public static List<Loop> BooleanOperation(Loop left, Loop right)
-//        {
-//            var result = new List<Loop>();
+    //        #region Static methods
+    //        public static List<Loop> BooleanOperation(Loop left, Loop right)
+    //        {
+    //            var result = new List<Loop>();
 
-//            // Check region first
-//            var leftRegion = left.Region;
-//            var rightRegion = right.Region;
+    //            // Check region first
+    //            var leftRegion = left.Region;
+    //            var rightRegion = right.Region;
 
-//            if (leftRegion == null || rightRegion == null)
-//            {
-//                if (rightRegion != null)
-//                    result.Add(right);
+    //            if (leftRegion == null || rightRegion == null)
+    //            {
+    //                if (rightRegion != null)
+    //                    result.Add(right);
 
-//                if (leftRegion != null)
-//                    result.Add(left);
-//                return result;
-//            }
+    //                if (leftRegion != null)
+    //                    result.Add(left);
+    //                return result;
+    //            }
 
-//            // If they are not intersect.
-//            var intersects = left.Vertices.Intersect(right.Vertices);
-//            if (!intersects.Any())
-//            {
-//                result.Add(left);
-//                result.Add(right);
-//                return result;
-//            }
+    //            // If they are not intersect.
+    //            var intersects = left.Vertices.Intersect(right.Vertices);
+    //            if (!intersects.Any())
+    //            {
+    //                result.Add(left);
+    //                result.Add(right);
+    //                return result;
+    //            }
 
-//            // Boolean operation
-//            var bigArea = leftRegion.Area;
-//            var smallArea = rightRegion.Area;
-//            var loopBig = left;
-//            var loopSmall = right;
-//            bool leftIsBigger = true;
-//            if (bigArea.Smaller(smallArea))
-//            {
-//                loopBig = right;
-//                loopSmall = left;
-//                bigArea = rightRegion.Area;
-//                smallArea = leftRegion.Area;
-//                leftIsBigger = false;
-//            }
+    //            // Boolean operation
+    //            var bigArea = leftRegion.Area;
+    //            var smallArea = rightRegion.Area;
+    //            var loopBig = left;
+    //            var loopSmall = right;
+    //            bool leftIsBigger = true;
+    //            if (bigArea.Smaller(smallArea))
+    //            {
+    //                loopBig = right;
+    //                loopSmall = left;
+    //                bigArea = rightRegion.Area;
+    //                smallArea = leftRegion.Area;
+    //                leftIsBigger = false;
+    //            }
 
-//            var bigRegionClone = loopBig.Region.Clone() as Region;
-//            var smallRegionClone = loopSmall.Region.Clone() as Region;
+    //            var bigRegionClone = loopBig.Region.Clone() as Region;
+    //            var smallRegionClone = loopSmall.Region.Clone() as Region;
 
-//            bigRegionClone.BooleanOperation(BooleanOperationType.BoolIntersect, smallRegionClone);
-//            var sum = bigRegionClone.Area - smallArea;
-//            // loopSmall is inside of loopBig.
-//            if (sum.EqualsWithTolerance(0.0))
-//            {
-//                var insertVertices = loopSmall.Vertices.Except(loopBig.Vertices).ToList();
-//                var exceptVertices = loopBig.Vertices.Intersect(loopSmall.Vertices).ToList();
-//                if (exceptVertices.Count > 0)
-//                {
-//                    // The first and last vertices won't be removed.
-//                    exceptVertices.RemoveAt(0);
-//                    if (exceptVertices.Count > 0)
-//                    {
-//                        exceptVertices.RemoveAt(exceptVertices.Count -1);
-//                    }
-//                }
+    //            bigRegionClone.BooleanOperation(BooleanOperationType.BoolIntersect, smallRegionClone);
+    //            var sum = bigRegionClone.Area - smallArea;
+    //            // loopSmall is inside of loopBig.
+    //            if (sum.EqualsWithTolerance(0.0))
+    //            {
+    //                var insertVertices = loopSmall.Vertices.Except(loopBig.Vertices).ToList();
+    //                var exceptVertices = loopBig.Vertices.Intersect(loopSmall.Vertices).ToList();
+    //                if (exceptVertices.Count > 0)
+    //                {
+    //                    // The first and last vertices won't be removed.
+    //                    exceptVertices.RemoveAt(0);
+    //                    if (exceptVertices.Count > 0)
+    //                    {
+    //                        exceptVertices.RemoveAt(exceptVertices.Count -1);
+    //                    }
+    //                }
 
-//                var newVertices = loopBig.Vertices.ToList();
-//                var index = 0;
-//                if (exceptVertices.Count > 0)
-//                {
-//                    index = newVertices.IndexOf(exceptVertices[0]);
-//                    newVertices.RemoveRange(index, exceptVertices.Count);
-//                }
-//                insertVertices.Reverse();
-//                newVertices.InsertRange(index, insertVertices);
-                
-//                var newLoop = new Loop();
-//                newLoop.Vertices.AddRange(newVertices);
+    //                var newVertices = loopBig.Vertices.ToList();
+    //                var index = 0;
+    //                if (exceptVertices.Count > 0)
+    //                {
+    //                    index = newVertices.IndexOf(exceptVertices[0]);
+    //                    newVertices.RemoveRange(index, exceptVertices.Count);
+    //                }
+    //                insertVertices.Reverse();
+    //                newVertices.InsertRange(index, insertVertices);
 
-//                if (leftIsBigger)
-//                {
-//                    result.Add(newLoop);
-//                    result.Add(loopSmall);
-//                }
-//                else
-//                {
-//                    result.Add(loopSmall);
-//                    result.Add(newLoop);
-//                }
-//            }
-//            else if (bigRegionClone.Area.Smaller(bigArea))
-//            {
-//                // loopBig and loopSmall are intersect
-                
-//            }
-//            else
-//            {
-//                result.Add(left);
-//                result.Add(right);
-//            }
+    //                var newLoop = new Loop();
+    //                newLoop.Vertices.AddRange(newVertices);
 
-//            bigRegionClone.Dispose();
-//            smallRegionClone.Dispose();
-//            return result;
-//        }
+    //                if (leftIsBigger)
+    //                {
+    //                    result.Add(newLoop);
+    //                    result.Add(loopSmall);
+    //                }
+    //                else
+    //                {
+    //                    result.Add(loopSmall);
+    //                    result.Add(newLoop);
+    //                }
+    //            }
+    //            else if (bigRegionClone.Area.Smaller(bigArea))
+    //            {
+    //                // loopBig and loopSmall are intersect
 
-//        #endregion
-//    }
+    //            }
+    //            else
+    //            {
+    //                result.Add(left);
+    //                result.Add(right);
+    //            }
+
+    //            bigRegionClone.Dispose();
+    //            smallRegionClone.Dispose();
+    //            return result;
+    //        }
+
+    //        #endregion
+    //    }
 
     public class MinimalLoopSearcher2
     {
@@ -554,7 +585,9 @@ namespace LS.MapClean.Addin.Algorithms
         public static IEnumerable<Polyline> Search(IEnumerable<ObjectId> selectedObjectIds, Document document)
         {
             if (selectedObjectIds == null || !selectedObjectIds.Any())
+            {
                 return new Polyline[0];
+            }
 #if DEBUG
             var watch = Stopwatch.StartNew();
 #endif
@@ -572,12 +605,16 @@ namespace LS.MapClean.Addin.Algorithms
             }
 
             if (loops == null || !loops.Any())
+            {
                 return new Polyline[0];
+            }
 
             // Use clipper to search all minimum polygons.
             var polylines = CreatePolylines(loops, document);
-            if(polylines == null || !polylines.Any())
+            if (polylines == null || !polylines.Any())
+            {
                 return new Polyline[0];
+            }
 
             Dictionary<Curve, List<Curve>> replaced = null;
             var polygons = SearchMinimalPolygons(polylines, out replaced);
@@ -600,7 +637,7 @@ namespace LS.MapClean.Addin.Algorithms
             {
                 polyline.Dispose();
             }
-            
+
 #if DEBUG
             watch.Stop();
             var elapseMs = watch.ElapsedMilliseconds;
@@ -633,7 +670,9 @@ namespace LS.MapClean.Addin.Algorithms
             foreach (var edge in loop)
             {
                 if (edge.Source.Id != edge.Target.Id)
+                {
                     continue;
+                }
 
                 // 防止中点参与计算
                 if (edge.Source.Id != prevId)
@@ -650,25 +689,30 @@ namespace LS.MapClean.Addin.Algorithms
                     continue;
                 }
 
-                var split = new List<SEdge<CurveVertex>>();
-                split.Add(edge);
+                var split = new List<SEdge<CurveVertex>>
+                {
+                    edge
+                };
                 while (true)
                 {
                     var pop = stack.Pop();
                     split.Insert(0, pop);
                     if (pop.Equals(existing))
+                    {
                         break;
+                    }
                 }
                 result.Add(split.ToArray());
             }
             return result;
         }
 
-
         private static Polyline CreatePolyline2(SEdge<CurveVertex>[] loop, Transaction transaction)
         {
             if (loop == null || loop.Length <= 0)
+            {
                 return null;
+            }
 
             var prevId = ObjectId.Null;
             var vertices = new List<Point3d>();
@@ -676,20 +720,30 @@ namespace LS.MapClean.Addin.Algorithms
             {
                 var sEdge = loop[i];
                 if (sEdge.Source.Id != sEdge.Target.Id || sEdge.Source.Id == prevId)
+                {
                     continue;
+                }
+
                 var tempVertices = CurveUtils.GetDistinctVertices(sEdge.Source.Id, transaction);
                 if (tempVertices.Count <= 0)
+                {
                     continue;
+                }
 
                 prevId = sEdge.Source.Id;
                 // 如果图的边的target点不是曲线的首点，那么反转
                 // 我们得到的loop本身就是逆序的，是target->source->target->source样子的，所以用target来比较
                 if (sEdge.Target.Point != tempVertices[0])
+                {
                     tempVertices.Reverse();
+                }
 
                 // 防止重点
-                if(vertices.Count > 0)
+                if (vertices.Count > 0)
+                {
                     tempVertices.RemoveAt(0);
+                }
+
                 vertices.AddRange(tempVertices);
             }
             var polyline = CurveUtils.CreatePolygon(vertices.ToArray());
@@ -700,15 +754,19 @@ namespace LS.MapClean.Addin.Algorithms
         {
             var result = new List<Polyline>();
             if (loop == null || loop.Length <= 0)
+            {
                 return result;
+            }
 
             // 将大的loop分解成小的loop，避免自相交
             var unitLoops = SplitLoop(loop);
             foreach (var unitLoop in unitLoops)
             {
                 var polyline = CreatePolyline2(unitLoop, transaction);
-                if(polyline != null)
+                if (polyline != null)
+                {
                     result.Add(polyline);
+                }
             }
             return result;
         }
@@ -717,7 +775,9 @@ namespace LS.MapClean.Addin.Algorithms
         {
             var result = new List<Polyline>();
             if (loop == null || loop.Length <= 0)
+            {
                 return result;
+            }
 
             var lastId = ObjectId.Null;
             for (int i = 0; i < loop.Length; i++)
@@ -726,7 +786,9 @@ namespace LS.MapClean.Addin.Algorithms
                 var targetId = loop[i].Target.Id;
                 // Only when sourceId is equal to targetId
                 if (sourceId != targetId)
+                {
                     continue;
+                }
 
                 lastId = sourceId;
             }
@@ -740,16 +802,24 @@ namespace LS.MapClean.Addin.Algorithms
             {
                 var sEdge = loop[i];
                 if (sEdge.Source.Id != sEdge.Target.Id || sEdge.Source.Id == prevId)
+                {
                     continue;
+                }
+
                 var tempVertices = CurveUtils.GetDistinctVertices(sEdge.Source.Id, transaction);
                 if (tempVertices.Count <= 0)
+                {
                     continue;
+                }
 
                 prevId = sEdge.Source.Id;
                 // 如果图的边的target点不是曲线的首点，那么反转
                 // 我们得到的loop本身就是逆序的，是target->source->target->source样子的，所以用target来比较
                 if (sEdge.Target.Point != tempVertices[0])
+                {
                     tempVertices.Reverse();
+                }
+
                 vertices.AddRange(tempVertices);
                 if (vertices[vertices.Count - 1] == firstPoint || sEdge.Target.Id == lastId)
                 {
@@ -759,7 +829,9 @@ namespace LS.MapClean.Addin.Algorithms
                     result.Add(polyline);
                     // 如果还有边，那么要继续下去
                     if (sEdge.Target.Id != lastId)
+                    {
                         vertices = new List<Point3d>();
+                    }
                 }
             }
             return result;
@@ -768,19 +840,25 @@ namespace LS.MapClean.Addin.Algorithms
         private static Polyline CreatePolyline(SEdge<CurveVertex>[] loop, Transaction transaction)
         {
             if (loop == null || loop.Length <= 0)
+            {
                 return null;
+            }
 
             var ids = new List<ObjectId>();
-            for(int i = 0; i < loop.Length; i++)
+            for (int i = 0; i < loop.Length; i++)
             {
                 var sourceId = loop[i].Source.Id;
                 var targetId = loop[i].Target.Id;
                 // Only when sourceId is equal to targetId
                 if (sourceId != targetId)
+                {
                     continue;
+                }
                 // 保证id不重复
-                if(!ids.Contains(sourceId))
+                if (!ids.Contains(sourceId))
+                {
                     ids.Add(sourceId);
+                }
             }
 
             List<Point3d> vertices = null;
@@ -788,7 +866,9 @@ namespace LS.MapClean.Addin.Algorithms
             {
                 var tempVertices = CurveUtils.GetDistinctVertices(objectId, transaction);
                 if (tempVertices.Count <= 0)
+                {
                     continue;
+                }
 
                 if (vertices == null)
                 {
@@ -803,12 +883,16 @@ namespace LS.MapClean.Addin.Algorithms
                 }
 
                 if (vertices[0] == tempVertices[0])
+                {
                     vertices.Reverse();
+                }
 
                 vertices.AddRange(tempVertices);
             }
             if (vertices == null || vertices.Count <= 0)
+            {
                 return null;
+            }
 
             var polyline = CurveUtils.CreatePolygon(vertices.ToArray());
             return polyline;
@@ -817,10 +901,12 @@ namespace LS.MapClean.Addin.Algorithms
         public static IEnumerable<Polyline> GetAllLoopPolylines(IEnumerable<ObjectId> selectedObjectIds, Document document)
         {
             if (selectedObjectIds == null || !selectedObjectIds.Any())
+            {
                 return new Polyline[0];
+            }
 
             IEnumerable<SEdge<CurveVertex>[]> loops = null;
-            using(var tolerance = new SafeToleranceOverride())
+            using (var tolerance = new SafeToleranceOverride())
             using (var transaction = document.Database.TransactionManager.StartTransaction())
             {
                 // Build a quick graph by using KdTreeCurveGraphBuilder
@@ -834,12 +920,16 @@ namespace LS.MapClean.Addin.Algorithms
             }
 
             if (loops == null || !loops.Any())
+            {
                 return new Polyline[0];
+            }
 
             // Use clipper to search all minimum polygons.
             var polylines = CreatePolylines(loops, document);
             if (polylines == null || !polylines.Any())
+            {
                 return new Polyline[0];
+            }
 
             return polylines;
         }
@@ -897,8 +987,10 @@ namespace LS.MapClean.Addin.Algorithms
                 var pls = GetReplacedPolylines(polylineVertex.Polyline, replaced);
                 foreach (var pl in pls)
                 {
-                    if(!result.Contains(pl))
+                    if (!result.Contains(pl))
+                    {
                         result.Add(pl);
+                    }
                 }
             }
             return result;
@@ -937,7 +1029,9 @@ namespace LS.MapClean.Addin.Algorithms
         {
             var result = new HashSet<Curve>();
             if (!allNears.ContainsKey(polyline))
+            {
                 return result;
+            }
 
             var nears = allNears[polyline];
             foreach (Curve near in nears)
@@ -951,7 +1045,9 @@ namespace LS.MapClean.Addin.Algorithms
                 foreach (var pl in pls)
                 {
                     if (!result.Contains(pl))
+                    {
                         result.Add(pl);
+                    }
                 }
             }
             return result;
@@ -961,8 +1057,10 @@ namespace LS.MapClean.Addin.Algorithms
             Dictionary<Curve, List<Curve>> replaced)
         {
             var result = new List<Curve>();
-            if(!replaced.ContainsKey(polyline))
+            if (!replaced.ContainsKey(polyline))
+            {
                 result.Add(polyline);
+            }
             else
             {
                 var replacedPls = replaced[polyline];
@@ -1012,13 +1110,11 @@ namespace LS.MapClean.Addin.Algorithms
                             }
                         }
                     }
-
                     else
                     {
                         // 如果不存在near polyline，则sourcePolyline要添加进去
                         newSourcePolylines.Add(sourcePolyline);
                     }
-                    
                 }
                 sourcePolylines = newSourcePolylines;
             }
@@ -1051,7 +1147,6 @@ namespace LS.MapClean.Addin.Algorithms
                             replaced[newNearPolyline].AddRange(targetDiffs);
                         }
                     }
-                    
                 }
             }
 
@@ -1094,7 +1189,10 @@ namespace LS.MapClean.Addin.Algorithms
             // 获取相交部分
             var tempIntersects = ClipperBoolean(new List<Curve>() { source }, new List<Curve>() { target }, ClipType.ctIntersection);
             if (tempIntersects.Count <= 0)
+            {
                 return;
+            }
+
             intersects = new List<Curve>(tempIntersects);
 
             // 获取source polyline和相交部分的差
@@ -1113,7 +1211,7 @@ namespace LS.MapClean.Addin.Algorithms
                     }
                 }
             }
-            
+
             // 获取target polyline和相交部分的差
             var tempTargetDiffs = ClipperBoolean(new List<Curve>() { target }, tempIntersects, ClipType.ctDifference);
             targetDiffs = new List<Curve>(tempTargetDiffs);
@@ -1135,7 +1233,7 @@ namespace LS.MapClean.Addin.Algorithms
         private static List<Curve> ClipperBoolean(List<Curve> sources, List<Curve> targets, ClipType clipType)
         {
             var booleanResults = new List<Curve>();
-            
+
             var sourceVerticesList = new List<List<Point3d>>();
             var targetVerticesList = new List<List<Point3d>>();
             foreach (var source in sources)
@@ -1143,7 +1241,7 @@ namespace LS.MapClean.Addin.Algorithms
                 var sourceVertices = CurveUtils.GetDistinctVertices(source, null);
                 sourceVerticesList.Add(sourceVertices);
             }
-            
+
             foreach (var target in targets)
             {
                 var targetVertices = CurveUtils.GetDistinctVertices(target, null);
@@ -1152,7 +1250,9 @@ namespace LS.MapClean.Addin.Algorithms
 
             var pathes = ClipperBoolean(sourceVerticesList, targetVerticesList, clipType);
             if (pathes.Count <= 0)
+            {
                 return booleanResults;
+            }
 
             foreach (var path in pathes)
             {
@@ -1181,7 +1281,10 @@ namespace LS.MapClean.Addin.Algorithms
             foreach (var sourceVertices in sources)
             {
                 if (sourceVertices[0] == sourceVertices[sourceVertices.Count - 1])
+                {
                     sourceVertices.RemoveAt(sourceVertices.Count - 1);
+                }
+
                 allVertices.AddRange(sourceVertices);
                 var subjectPath = sourceVertices.Select(it => new IntPoint((Int64)(it.X * scale), (Int64)(it.Y * scale))).ToList();
                 subject.Add(subjectPath);
@@ -1190,7 +1293,10 @@ namespace LS.MapClean.Addin.Algorithms
             foreach (var targetVertices in targets)
             {
                 if (targetVertices[0] == targetVertices[targetVertices.Count - 1])
+                {
                     targetVertices.RemoveAt(targetVertices.Count - 1);
+                }
+
                 allVertices.AddRange(targetVertices);
 
                 var clipperPath = targetVertices.Select(it => new IntPoint((Int64)(it.X * scale), (Int64)(it.Y * scale))).ToList();
@@ -1199,7 +1305,9 @@ namespace LS.MapClean.Addin.Algorithms
 
             // 确保有顶点存在，否则没必要计算
             if (allVertices.Count <= 0)
+            {
                 return booleanResults;
+            }
 
             var cpr = new Clipper();
             cpr.AddPaths(subject, PolyType.ptSubject, true);
@@ -1235,12 +1343,14 @@ namespace LS.MapClean.Addin.Algorithms
         private static bool AreDuplicateEntities(Curve source, Curve target)
         {
             if (source == target)
+            {
                 return false;
+            }
 
             // Check whether all the intersection points are curve's vertices.
             var sourceVertices = CurveUtils.GetDistinctVertices(source, null);
             var targetVertices = CurveUtils.GetDistinctVertices(target, null);
-            
+
             return PolygonIncludeSearcher.AreDuplicateEntities(sourceVertices, targetVertices);
         }
 
@@ -1253,12 +1363,14 @@ namespace LS.MapClean.Addin.Algorithms
             }
 
             private readonly Point3d _point;
+
             public Point3d Point
             {
                 get { return _point; }
             }
 
             private readonly Curve _polyline;
+
             public Curve Polyline
             {
                 get { return _polyline; }
@@ -1268,7 +1380,10 @@ namespace LS.MapClean.Addin.Algorithms
             public override bool Equals(object obj)
             {
                 if (obj.GetType() != typeof(PolylineVertex))
+                {
                     return false;
+                }
+
                 var right = (PolylineVertex)obj;
                 var result = Point.IsEqualTo(right.Point) && Polyline == right.Polyline;
                 return result;
@@ -1308,7 +1423,7 @@ namespace LS.MapClean.Addin.Algorithms
                 }
             }
 
-            var replaced = new Dictionary<Curve, List<Curve>>(); 
+            var replaced = new Dictionary<Curve, List<Curve>>();
             foreach (var pair in dictionary)
             {
                 var inPolylines = pair.Value;
@@ -1336,7 +1451,7 @@ namespace LS.MapClean.Addin.Algorithms
                         }
                     }
                 }
-                
+
                 if (needReplace)
                 {
                     replaced[pair.Key] = new List<Curve>(differs);
@@ -1351,7 +1466,9 @@ namespace LS.MapClean.Addin.Algorithms
                 foreach (var inPolyline in inPolylines)
                 {
                     if (!pair.Value.Contains(inPolyline))
+                    {
                         inPolyline.Dispose();
+                    }
                 }
             }
 
@@ -1370,7 +1487,9 @@ namespace LS.MapClean.Addin.Algorithms
         {
             var result = new List<KeyValuePair<Curve, Curve>>();
             if (polylines == null || !polylines.Any())
+            {
                 return result;
+            }
 
             var allVertices = new List<PolylineVertex>();
             foreach (var polyline in polylines)

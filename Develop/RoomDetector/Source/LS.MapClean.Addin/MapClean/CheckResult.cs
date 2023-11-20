@@ -30,6 +30,7 @@ namespace LS.MapClean.Addin.MapClean
         /// Action type of check result.
         /// </summary>
         private readonly ActionType _actionType;
+
         public ActionType ActionType
         {
             get { return _actionType; }
@@ -39,6 +40,7 @@ namespace LS.MapClean.Addin.MapClean
         /// Check result's status.
         /// </summary>
         private MapClean.Status _status = Status.Pending;
+
         public MapClean.Status Status
         {
             get { return _status; }
@@ -68,15 +70,18 @@ namespace LS.MapClean.Addin.MapClean
         /// Whether to highlight entity
         /// </summary>
         private bool _highlightEntity = true;
+
         public bool HighlightEntity
         {
             get { return _highlightEntity; }
             set { _highlightEntity = value; }
         }
+
         /// <summary>
         /// ObjectIds of check result.
         /// </summary>
         private readonly IEnumerable<ObjectId> _sourceIds;
+
         public IEnumerable<ObjectId> SourceIds
         {
             get { return _sourceIds; }
@@ -99,6 +104,7 @@ namespace LS.MapClean.Addin.MapClean
         }
 
         private Extents3d? _sourceGeometricExtents = null;
+
         protected virtual Extents3d? GetCheckResultExtents()
         {
             return _sourceGeometricExtents;
@@ -108,6 +114,7 @@ namespace LS.MapClean.Addin.MapClean
         /// Status changed event
         /// </summary>
         public event EventHandler<EventArgs> StatusChanged;
+
         protected void RaiseStatusChangedEvent()
         {
             if (StatusChanged != null)
@@ -117,6 +124,7 @@ namespace LS.MapClean.Addin.MapClean
         }
 
         private bool _disposed = false;
+
         public void Dispose()
         {
             Dispose(true);
@@ -141,87 +149,115 @@ namespace LS.MapClean.Addin.MapClean
                 case ActionType.NoneZeroElevation:
                     result = "高程不为0对象";
                     break;
+
                 case ActionType.DuplicateVertexPline:
                     result = "多段线重复点";
                     break;
+
                 case ActionType.DeleteDuplicates:
                     result = "重复对象";
                     break;
+
                 case ActionType.EraseShort:
                     result = "短对象";
                     break;
+
                 case ActionType.BreakCrossing:
                     result = "交叉对象";
                     break;
+
                 case ActionType.ExtendUndershoots:
                     result = "未及点";
                     break;
+
                 case ActionType.ApparentIntersection:
                     result = "外观交点";
                     break;
+
                 case ActionType.SnapClustered:
                     result = "节点簇";
                     break;
+
                 case ActionType.DissolvePseudo:
                     result = "伪节点";
                     break;
+
                 case ActionType.EraseDangling:
                     result = "悬挂对象";
                     break;
+
                 case ActionType.ZeroLength:
                     result = "零长度对象";
                     break;
+
                 case ActionType.ZeroAreaLoop:
                     result = "零面积闭合线";
                     break;
+
                 case ActionType.SmallPolygon:
                     result = "小面积多边形";
                     break;
+
                 case ActionType.UnclosedPolygon:
                     result = "非闭合多段线";
                     break;
+
                 case ActionType.IntersectPolygon:
                     result = "相交多边形";
                     break;
+
                 case ActionType.DuplicatePolygon:
                     result = "重复多边形";
                     break;
+
                 case ActionType.SmallPolygonGap:
                     result = "狭小地块缝隙";
                     break;
+
                 case ActionType.PolygonHole:
                     result = "地块间孔洞";
                     break;
+
                 case ActionType.SelfIntersect:
                     result = "自相交或回头线";
                     break;
+
                 case ActionType.MissingVertexInPolygon:
                     result = "三岔口缺顶点";
                     break;
+
                 case ActionType.SelfIntersect2:
                     result = "自相交";
-					break;
+                    break;
+
                 case ActionType.AntiClockwisePolygon:
                     result = "逆时针多边形";
                     break;
+
                 case ActionType.FindDangling:
                     result = "悬挂线";
                     break;
+
                 case ActionType.OverlapPolygon:
                     result = "多边形重叠";
                     break;
+
                 case ActionType.AnnotationOverlap:
                     result = "地块标注重叠";
                     break;
+
                 case ActionType.FindIslandPolygon:
                     result = "未处理孔洞";
                     break;
+
                 case ActionType.ArcSegment:
                     result = "弧段";
                     break;
+
                 case ActionType.RectifyPointDeviation:
                     result = "极近点";
                     break;
+
                 case ActionType.SharpCornerPolygon:
                     result = "狭长角多边形";
                     break;
@@ -253,6 +289,7 @@ namespace LS.MapClean.Addin.MapClean
         //}
 
         private CurveCrossingInfo _crossingInfo;
+
         public CurveCrossingInfo CrossingInfo
         {
             get { return _crossingInfo; }
@@ -283,6 +320,7 @@ namespace LS.MapClean.Addin.MapClean
     public class DanglingCheckResult : CheckResult
     {
         private IEnumerable<SEdge<CurveVertex>> _danglingPath;
+
         public IEnumerable<SEdge<CurveVertex>> DanglingPath
         {
             get { return _danglingPath; }
@@ -332,6 +370,7 @@ namespace LS.MapClean.Addin.MapClean
     public class DuplicateEntitiesCheckResult : CheckResult
     {
         private CurveCrossingInfo _crossingInfo;
+
         public CurveCrossingInfo CrossingInfo
         {
             get { return _crossingInfo; }
@@ -419,6 +458,7 @@ namespace LS.MapClean.Addin.MapClean
     public class ClusteredNodesCheckResult : CheckResult
     {
         private ClusterNodesInfo _clusteredNodes;
+
         public ClusterNodesInfo ClusteredNodes
         {
             get { return _clusteredNodes; }
@@ -458,20 +498,21 @@ namespace LS.MapClean.Addin.MapClean
     public class UnderShootCheckResult : CheckResult
     {
         private IntersectionInfo _intersectionInfo;
+
         public IntersectionInfo IntersectionInfo
         {
             get { return _intersectionInfo; }
         }
 
         public UnderShootCheckResult(IntersectionInfo info)
-            : base(ActionType.ExtendUndershoots, new ObjectId[]{ info.SourceId, info.TargetId })
+            : base(ActionType.ExtendUndershoots, new ObjectId[] { info.SourceId, info.TargetId })
         {
             _intersectionInfo = info;
         }
 
         public override Point3d[] MarkPoints
         {
-            get { return new Point3d[]{ _intersectionInfo.IntersectPoint }; }
+            get { return new Point3d[] { _intersectionInfo.IntersectPoint }; }
         }
 
         public override Point3d Position
@@ -488,20 +529,21 @@ namespace LS.MapClean.Addin.MapClean
     public class ApparentIntersectionCheckResult : CheckResult
     {
         private IntersectionInfo _intersectionInfo;
+
         public IntersectionInfo IntersectionInfo
         {
             get { return _intersectionInfo; }
         }
 
         public ApparentIntersectionCheckResult(IntersectionInfo info)
-            : base(ActionType.ApparentIntersection, new ObjectId[]{info.SourceId, info.TargetId})
+            : base(ActionType.ApparentIntersection, new ObjectId[] { info.SourceId, info.TargetId })
         {
             _intersectionInfo = info;
         }
 
         public override Point3d[] MarkPoints
         {
-            get { return new Point3d[]{ _intersectionInfo.IntersectPoint }; }
+            get { return new Point3d[] { _intersectionInfo.IntersectPoint }; }
         }
 
         public override Point3d Position
@@ -520,7 +562,7 @@ namespace LS.MapClean.Addin.MapClean
         private Point3d _position;
 
         public ZeroLengthCheckResult(ObjectId sourceId)
-            : base(ActionType.ZeroLength, new List<ObjectId>() {sourceId})
+            : base(ActionType.ZeroLength, new List<ObjectId>() { sourceId })
         {
             var database = Application.DocumentManager.MdiActiveDocument.Database;
             using (var transaction = database.TransactionManager.StartTransaction())
@@ -534,7 +576,7 @@ namespace LS.MapClean.Addin.MapClean
 
         public override Point3d[] MarkPoints
         {
-            get { return new Point3d[]{_position}; }
+            get { return new Point3d[] { _position }; }
         }
 
         public override Point3d Position
@@ -560,7 +602,7 @@ namespace LS.MapClean.Addin.MapClean
 
         public override Point3d[] MarkPoints
         {
-            get { return new Point3d[]{_position}; }
+            get { return new Point3d[] { _position }; }
         }
 
         public override Point3d Position
@@ -577,6 +619,7 @@ namespace LS.MapClean.Addin.MapClean
     public class SmallPolygonCheckResult : CheckResult
     {
         private Point3d _position = new Point3d(0, 0, 0);
+
         public SmallPolygonCheckResult(ObjectId sourceId)
             : base(ActionType.SmallPolygon, new ObjectId[] { sourceId })
         {
@@ -598,7 +641,7 @@ namespace LS.MapClean.Addin.MapClean
 
         public override Point3d[] MarkPoints
         {
-            get { return new Point3d[]{ _position }; }
+            get { return new Point3d[] { _position }; }
         }
 
         public override Point3d Position
@@ -615,8 +658,9 @@ namespace LS.MapClean.Addin.MapClean
     public class UnclosedPolygonCheckResult : CheckResult
     {
         private Point3d[] _markPoints;
+
         public UnclosedPolygonCheckResult(ObjectId sourceId)
-            : base(ActionType.UnclosedPolygon, new ObjectId[] {sourceId})
+            : base(ActionType.UnclosedPolygon, new ObjectId[] { sourceId })
         {
             using (var transaction = sourceId.Database.TransactionManager.StartTransaction())
             {
@@ -645,10 +689,9 @@ namespace LS.MapClean.Addin.MapClean
     {
         //private Autodesk.AutoCAD.DatabaseServices.Polyline _polylineSource = null;
         //private Autodesk.AutoCAD.DatabaseServices.Polyline _polylineTarget = null;
-        private List<Autodesk.AutoCAD.DatabaseServices.Polyline> _intersectionPaths =
-            new List<Autodesk.AutoCAD.DatabaseServices.Polyline>();
+        private List<AcadPolyline> _intersectionPaths = new List<AcadPolyline>();
 
-        private Point3d _position = new Point3d(0,0,0);
+        private Point3d _position = new Point3d(0, 0, 0);
         private double _basesize = 1.0;
 
         public IntersectPolygonCheckResult(PolygonIntersect intersect)
@@ -669,7 +712,7 @@ namespace LS.MapClean.Addin.MapClean
 
         public override Point3d[] MarkPoints
         {
-            get { return new Point3d[]{_position}; }
+            get { return new Point3d[] { _position }; }
         }
 
         public override Point3d Position
@@ -686,6 +729,7 @@ namespace LS.MapClean.Addin.MapClean
         }
 
         private bool _disposed = false;
+
         protected override void Dispose(bool disposing)
         {
             if (_disposed)
@@ -698,7 +742,7 @@ namespace LS.MapClean.Addin.MapClean
             }
             _disposed = true;
 
-            // Call base class implementation. 
+            // Call base class implementation.
             base.Dispose(disposing);
         }
     }
@@ -711,7 +755,7 @@ namespace LS.MapClean.Addin.MapClean
         private List<AcadPolyline> _polylines = new List<AcadPolyline>();
 
         public SmallPolygonGapCheckResult(PolygonGap gap)
-            : base(ActionType.SmallPolygonGap, new ObjectId[] { gap.SourceId, gap.TargetId})
+            : base(ActionType.SmallPolygonGap, new ObjectId[] { gap.SourceId, gap.TargetId })
         {
             foreach (var segment in gap.SourceSegments)
             {
@@ -754,7 +798,7 @@ namespace LS.MapClean.Addin.MapClean
 
         public override Point3d[] MarkPoints
         {
-            get { return new Point3d[]{ _position }; }
+            get { return new Point3d[] { _position }; }
         }
 
         public override Point3d Position
@@ -766,11 +810,12 @@ namespace LS.MapClean.Addin.MapClean
         {
             get
             {
-                return _polylines.Select(it=>(Drawable)it.Clone()).ToArray(); 
+                return _polylines.Select(it => (Drawable)it.Clone()).ToArray();
             }
         }
 
         private bool _disposed = false;
+
         protected override void Dispose(bool disposing)
         {
             if (_disposed)
@@ -785,71 +830,71 @@ namespace LS.MapClean.Addin.MapClean
             }
             _disposed = true;
 
-            // Call base class implementation. 
+            // Call base class implementation.
             base.Dispose(disposing);
         }
 
-    //public class SmallPolygonGapCheckResult : CheckResult
-    //{
-    //    private Autodesk.AutoCAD.DatabaseServices.Polyline _transientPolyline = null;
-    //    private Point3d _position = new Point3d(0,0,0);
+        //public class SmallPolygonGapCheckResult : CheckResult
+        //{
+        //    private Autodesk.AutoCAD.DatabaseServices.Polyline _transientPolyline = null;
+        //    private Point3d _position = new Point3d(0,0,0);
 
-    //    public SmallPolygonGapCheckResult(PolygonGap2 gap)
-    //        : base(ActionType.SmallPolygonGap, new ObjectId[] { gap.SourceId, gap.TargetId })
-    //    {
-    //        _transientPolyline = new Autodesk.AutoCAD.DatabaseServices.Polyline();
-    //        for (int i = 0; i < gap.GapVertices.Length; i++)
-    //        {
-    //            var point2d = new Point2d(gap.GapVertices[i].X, gap.GapVertices[i].Y);
-    //            _transientPolyline.AddVertexAt(i, point2d, 0, 1, 1);
-    //        }
-    //        _transientPolyline.Closed = true;
+        //    public SmallPolygonGapCheckResult(PolygonGap2 gap)
+        //        : base(ActionType.SmallPolygonGap, new ObjectId[] { gap.SourceId, gap.TargetId })
+        //    {
+        //        _transientPolyline = new Autodesk.AutoCAD.DatabaseServices.Polyline();
+        //        for (int i = 0; i < gap.GapVertices.Length; i++)
+        //        {
+        //            var point2d = new Point2d(gap.GapVertices[i].X, gap.GapVertices[i].Y);
+        //            _transientPolyline.AddVertexAt(i, point2d, 0, 1, 1);
+        //        }
+        //        _transientPolyline.Closed = true;
 
-    //        var extents = _transientPolyline.GeometricExtents;
-    //        _position = extents.MinPoint + (extents.MaxPoint - extents.MinPoint) / 2;
-    //        HighlightEntity = false;
-    //    }
+        //        var extents = _transientPolyline.GeometricExtents;
+        //        _position = extents.MinPoint + (extents.MaxPoint - extents.MinPoint) / 2;
+        //        HighlightEntity = false;
+        //    }
 
-    //    public override Point3d[] MarkPoints
-    //    {
-    //        get { return new Point3d[0]; }
-    //    }
+        //    public override Point3d[] MarkPoints
+        //    {
+        //        get { return new Point3d[0]; }
+        //    }
 
-    //    public override Point3d Position
-    //    {
-    //        get { return _position; }
-    //    }
+        //    public override Point3d Position
+        //    {
+        //        get { return _position; }
+        //    }
 
-    //    public override Drawable[] TransientDrawables
-    //    {
-    //        get { return new Drawable[] {_transientPolyline}; }
-    //    }
+        //    public override Drawable[] TransientDrawables
+        //    {
+        //        get { return new Drawable[] {_transientPolyline}; }
+        //    }
 
-    //    public override double BaseSize
-    //    {
-    //        get
-    //        {
-    //            var extents = _transientPolyline.GeometricExtents;
-    //            return (extents.MaxPoint - extents.MinPoint).Length;
-    //        }
-    //    }
+        //    public override double BaseSize
+        //    {
+        //        get
+        //        {
+        //            var extents = _transientPolyline.GeometricExtents;
+        //            return (extents.MaxPoint - extents.MinPoint).Length;
+        //        }
+        //    }
 
-    //    private bool _disposed = false;
-    //    protected override void Dispose(bool disposing)
-    //    {
-    //        if (_disposed)
-    //            return;
-    //        if (disposing)
-    //        {
-    //            if (_transientPolyline != null)
-    //                _transientPolyline.Dispose();
-    //            _transientPolyline = null;
-    //        }
-    //        _disposed = true;
+        //    private bool _disposed = false;
+        //    protected override void Dispose(bool disposing)
+        //    {
+        //        if (_disposed)
+        //            return;
+        //        if (disposing)
+        //        {
+        //            if (_transientPolyline != null)
+        //                _transientPolyline.Dispose();
+        //            _transientPolyline = null;
+        //        }
+        //        _disposed = true;
 
-    //        // Call base class implementation. 
-    //        base.Dispose(disposing);
-    //    }
+        //        // Call base class implementation.
+        //        base.Dispose(disposing);
+        //    }
     }
 
     public class PolygonHoleCheckResult : CheckResult
@@ -905,6 +950,7 @@ namespace LS.MapClean.Addin.MapClean
         }
 
         private bool _disposed = false;
+
         protected override void Dispose(bool disposing)
         {
             if (_disposed)
@@ -919,7 +965,7 @@ namespace LS.MapClean.Addin.MapClean
             }
             _disposed = true;
 
-            // Call base class implementation. 
+            // Call base class implementation.
             base.Dispose(disposing);
         }
 
@@ -932,13 +978,14 @@ namespace LS.MapClean.Addin.MapClean
     public class SelfIntersectCheckResult : CheckResult
     {
         private CurveCrossingInfo _crossingInfo;
+
         public CurveCrossingInfo CrossingInfo
         {
             get { return _crossingInfo; }
         }
 
         public SelfIntersectCheckResult(CurveCrossingInfo crossingInfo)
-            : base(ActionType.SelfIntersect, new ObjectId[] { crossingInfo.SourceId})
+            : base(ActionType.SelfIntersect, new ObjectId[] { crossingInfo.SourceId })
         {
             _crossingInfo = crossingInfo;
         }
@@ -972,7 +1019,7 @@ namespace LS.MapClean.Addin.MapClean
                 var minPoint = extents.Value.MinPoint;
                 var maxPoint = extents.Value.MaxPoint;
 
-                _position = minPoint + (maxPoint - minPoint)/2.0;
+                _position = minPoint + (maxPoint - minPoint) / 2.0;
             }
         }
 
@@ -992,12 +1039,11 @@ namespace LS.MapClean.Addin.MapClean
         }
     }
 
-    
     public class AnnotationOverlapCheckResult : CheckResult
     {
         private List<AcadPolyline> _intersectionPaths = new List<AcadPolyline>();
 
-        private Point3d _position = new Point3d(0,0,0);
+        private Point3d _position = new Point3d(0, 0, 0);
         private Extents3d _extents;
 
         public AnnotationOverlapCheckResult(PolygonIntersect intersect)
@@ -1006,10 +1052,10 @@ namespace LS.MapClean.Addin.MapClean
             using (var transaction = intersect.SourceId.Database.TransactionManager.StartTransaction())
             {
                 var polyline = transaction.GetObject(intersect.SourceId, OpenMode.ForRead) as AcadPolyline;
-                if(polyline != null)
+                if (polyline != null)
                     _intersectionPaths.Add((AcadPolyline)polyline.Clone());
                 polyline = transaction.GetObject(intersect.TargetId, OpenMode.ForRead) as AcadPolyline;
-                if(polyline != null)
+                if (polyline != null)
                     _intersectionPaths.Add((AcadPolyline)polyline.Clone());
             }
 
@@ -1047,6 +1093,7 @@ namespace LS.MapClean.Addin.MapClean
         }
 
         private bool _disposed = false;
+
         protected override void Dispose(bool disposing)
         {
             if (_disposed)
@@ -1059,19 +1106,19 @@ namespace LS.MapClean.Addin.MapClean
             }
             _disposed = true;
 
-            // Call base class implementation. 
+            // Call base class implementation.
             base.Dispose(disposing);
         }
     }
 
     public class ArcSegmentCheckResult : CheckResult
     {
-        private List<Curve> _arcs = new List<Curve>(); 
-        private Point3d _position = new Point3d(0,0,0);
+        private List<Curve> _arcs = new List<Curve>();
+        private Point3d _position = new Point3d(0, 0, 0);
         private Extents3d _extents;
 
         public ArcSegmentCheckResult(ObjectId curveId, Curve[] arcs)
-            : base(ActionType.ArcSegment, new ObjectId[] { curveId})
+            : base(ActionType.ArcSegment, new ObjectId[] { curveId })
         {
             _arcs.AddRange(arcs);
             using (var transaction = curveId.Database.TransactionManager.StartTransaction())
@@ -1099,6 +1146,7 @@ namespace LS.MapClean.Addin.MapClean
         }
 
         private bool _disposed = false;
+
         protected override void Dispose(bool disposing)
         {
             if (_disposed)
@@ -1111,7 +1159,7 @@ namespace LS.MapClean.Addin.MapClean
             }
             _disposed = true;
 
-            // Call base class implementation. 
+            // Call base class implementation.
             base.Dispose(disposing);
         }
     }
@@ -1119,20 +1167,21 @@ namespace LS.MapClean.Addin.MapClean
     public class NearVerticesCheckResult : CheckResult
     {
         private IEnumerable<CurveVertex> _nearVertices = null;
+
         public IEnumerable<CurveVertex> NearVertices
         {
             get { return _nearVertices; }
         }
 
         public NearVerticesCheckResult(IEnumerable<CurveVertex> nearVertices)
-            : base(ActionType.RectifyPointDeviation, new List<ObjectId>(nearVertices.Select(it=>it.Id).Distinct()))
+            : base(ActionType.RectifyPointDeviation, new List<ObjectId>(nearVertices.Select(it => it.Id).Distinct()))
         {
             _nearVertices = nearVertices;
         }
 
         public override Point3d[] MarkPoints
         {
-            get { return new Point3d[]{ _nearVertices.First().Point }; }
+            get { return new Point3d[] { _nearVertices.First().Point }; }
         }
 
         public override Point3d Position
@@ -1151,7 +1200,7 @@ namespace LS.MapClean.Addin.MapClean
         private IEnumerable<Point3d> _sharpCorners;
 
         public SharpCornerCheckResult(ObjectId polygonId, IEnumerable<Point3d> sharpCorners)
-            : base(ActionType.SharpCornerPolygon, new List<ObjectId>(){ polygonId })
+            : base(ActionType.SharpCornerPolygon, new List<ObjectId>() { polygonId })
         {
             _sharpCorners = sharpCorners;
         }

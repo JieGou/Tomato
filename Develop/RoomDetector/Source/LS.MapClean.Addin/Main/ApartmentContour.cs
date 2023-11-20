@@ -1,27 +1,39 @@
-﻿using System;
+﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.Colors;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
+using LS.MapClean.Addin.Algorithms;
+using LS.MapClean.Addin.Utils;
+using NetTopologySuite.Geometries;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.Colors;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Geometry;
-using LS.MapClean.Addin.Utils;
-using LS.MapClean.Addin.Algorithms;
-using NetTopologySuite.Geometries;
 using TopologyTools.Utils;
 
 namespace LS.MapClean.Addin.Main
 {
+    /// <summary>
+    /// 房间轮廓信息类
+    /// </summary>
     internal class ApartmentContourInfo
     {
         public List<LineSegment3d> Contour { get; set; }
         public List<LineSegment3d> InternalSegments { get; set; }
     }
 
+    /// <summary>
+    /// 房间轮廓
+    /// </summary>
     internal class ApartmentContour
     {
+        /// <summary>
+        /// 计算轮廓
+        /// </summary>
+        /// <param name="doc">AutoCAD文档</param>
+        /// <param name="objectIdsList">图元id集合</param>
+        /// <returns>房间轮廓信息</returns>
         public static ApartmentContourInfo CalcContour(Document doc, IEnumerable<ObjectId> objectIdsList)
         {
             var newCreatedIds = new List<ObjectId>();
@@ -62,7 +74,10 @@ namespace LS.MapClean.Addin.Main
                     foreach (var g in groups)
                     {
                         if (g.Count() <= 1)
+                        {
                             continue;
+                        }
+
                         bool first = true;
                         foreach (var curveCrossingInfo in g)
                         {
@@ -161,7 +176,7 @@ namespace LS.MapClean.Addin.Main
                     resultIds = NtsUtils.PolygonizeLineStrings(doc.Database, curveIds, "temp-poly", color, 0.0001);
                 }
             }
-            
+
             // 3. Union all polygons
             var database = doc.Database;
             var partitioner = new DrawingPartitioner(database);
@@ -182,7 +197,10 @@ namespace LS.MapClean.Addin.Main
             polylines.Sort((poly1, poly2) =>
             {
                 if (poly1.Area > poly2.Area)
+                {
                     return -1;
+                }
+
                 return 1;
             });
             if (polylines.Count >= 2)
@@ -202,7 +220,10 @@ namespace LS.MapClean.Addin.Main
             {
                 resultPoints = CurveUtils.GetDistinctVertices2D(largestPolyline, null);
                 if (resultPoints[0] != resultPoints[resultPoints.Count - 1])
+                {
                     resultPoints.Add(resultPoints[0]);
+                }
+
                 var clockwise = ComputerGraphics.ClockWise2(resultPoints.ToArray());
                 if (clockwise)
                 {
@@ -221,7 +242,6 @@ namespace LS.MapClean.Addin.Main
                 //    largestPolyline.LayerId = layerId;
                 //    modelspace.AppendEntity(largestPolyline);
                 //    transaction.AddNewlyCreatedDBObject(largestPolyline, add: true);
-
 
                 //    foreach (var polyline in polylines)
                 //    {
@@ -257,21 +277,26 @@ namespace LS.MapClean.Addin.Main
                     foreach (var objId in curveIds)
                     {
                         var point2ds = CurveUtils.GetDistinctVertices2D(objId, tr);
-                        
+
                         for (var i = 0; i < point2ds.Count - 1; i++)
                         {
                             var start = point2ds[i];
                             var end = point2ds[i + 1];
                             if (start.IsEqualTo(end))
+                            {
                                 continue;
+                            }
 
                             // TODO: no need to calculate again for startInPoly.
                             var startInPoly = ComputerGraphics.IsInPolygon2(start, contourArray);
                             var endInPoly = ComputerGraphics.IsInPolygon2(end, contourArray);
-                            
+
                             if ((startInPoly == 0 && endInPoly == 0) ||
                                 (startInPoly == -1 && endInPoly == -1))
+                            {
                                 continue;
+                            }
+
                             var segment = new LineSegment3d(new Point3d(start.X, start.Y, 0),
                                 new Point3d(end.X, end.Y, 0));
                             innerSegments.Add(segment);
@@ -287,7 +312,10 @@ namespace LS.MapClean.Addin.Main
                 foreach (var objId in resultIds)
                 {
                     if (objId.IsErased)
+                    {
                         continue;
+                    }
+
                     var dbObj = tr.GetObject(objId, OpenMode.ForWrite);
                     dbObj.Erase();
                 }
@@ -302,7 +330,10 @@ namespace LS.MapClean.Addin.Main
                 foreach (var newCreatedId in newCreatedIds)
                 {
                     if (newCreatedId.IsErased)
+                    {
                         continue;
+                    }
+
                     var dbObj = tr.GetObject(newCreatedId, OpenMode.ForWrite);
                     dbObj.Erase();
                 }
@@ -324,11 +355,14 @@ namespace LS.MapClean.Addin.Main
             var extents = polyline.GeometricExtents;
             var width = extents.MaxPoint.X - extents.MinPoint.X;
             var height = extents.MaxPoint.Y - extents.MinPoint.Y;
-            var idealArea = Math.Abs(width*height);
+            var idealArea = Math.Abs(width * height);
             if (idealArea.EqualsWithTolerance(0.0))
+            {
                 return false;
+            }
+
             var area = Math.Abs(polyline.Area);
-            var ratio = area/idealArea;
+            var ratio = area / idealArea;
             return ratio.LargerOrEqual(0.95);
         }
 
@@ -342,11 +376,13 @@ namespace LS.MapClean.Addin.Main
             {
                 var modelspaceId = SymbolUtilityServices.GetBlockModelSpaceId(database);
                 var modelspace = (BlockTableRecord)transaction.GetObject(modelspaceId, OpenMode.ForRead);
-                
+
                 foreach (ObjectId objId in modelspace)
                 {
                     if (textCount >= 5)
+                    {
                         break;
+                    }
 
                     var entity = transaction.GetObject(objId, OpenMode.ForRead);
                     var text = entity as DBText;
@@ -357,7 +393,9 @@ namespace LS.MapClean.Addin.Main
                     }
 
                     if (!IsVisibleEntity(entity, transaction))
+                    {
                         continue;
+                    }
 
                     Point3d textPosition;
                     if (text != null)
@@ -394,7 +432,9 @@ namespace LS.MapClean.Addin.Main
         {
             var layer = (LayerTableRecord)transaction.GetObject(((Entity)entity).LayerId, OpenMode.ForRead);
             if (layer.IsOff || layer.IsFrozen)
+            {
                 return false;
+            }
 
             return true;
         }

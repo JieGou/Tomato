@@ -14,3 +14,4 @@ Develop/RoomDetector/Source/Solutions/packages
 Develop/RoomDetector/Source/TopologyTools/bin
 Develop/RoomDetector/Source/TopologyTools/obj
 *.user
+/Develop/RoomDetector/Source/Solutions/.vs

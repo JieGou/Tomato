@@ -21,7 +21,7 @@ namespace TopologyTools
                 new TypedValue((int) DxfCode.Operator, "or>")
             };
             var filter = new SelectionFilter(tvs);
-            var selectionOpts = new PromptSelectionOptions {SingleOnly = true};
+            var selectionOpts = new PromptSelectionOptions { SingleOnly = true };
 
             var currDoc = Application.DocumentManager.MdiActiveDocument;
             //选择polyline
@@ -33,7 +33,7 @@ namespace TopologyTools
             using (new SnapModeOverrule(false))
             using (new OsModeOverrule(OsModeOverrule.OsModeNEArest))
             {
-                var peo = new PromptPointOptions("\n选择线上的点: ") {AllowNone = true};
+                var peo = new PromptPointOptions("\n选择线上的点: ") { AllowNone = true };
 
                 // 选中线上点或者cancel命令才退出。
                 while (true)
@@ -68,7 +68,7 @@ namespace TopologyTools
             var polyline2d = curve as Polyline2d;
 
             // 只支持Polyline和Polyline2d
-            if(polyline == null && polyline2d == null)
+            if (polyline == null && polyline2d == null)
                 return;
 
             Point3d pointOnCurve = pickPointOnPline(curve, newPoint);

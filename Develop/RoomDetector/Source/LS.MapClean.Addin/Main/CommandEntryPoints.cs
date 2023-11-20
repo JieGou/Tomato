@@ -1,17 +1,19 @@
-﻿﻿using System.Diagnostics;
-using System.Windows;
-using System.Windows.Documents;
-using Autodesk.AutoCAD.Colors;
+﻿using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
-using System;
-using System.Collections.Generic;
 using LS.MapClean.Addin.Algorithms;
 using LS.MapClean.Addin.MapClean;
 using LS.MapClean.Addin.SpreadPoints;
 using LS.MapClean.Addin.Utils;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Windows;
+using System.Windows.Documents;
+using DbxUtils.Extensions;
 using TopologyTools.ConvexHull;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 
@@ -19,8 +21,10 @@ namespace LS.MapClean.Addin.Main
 {
     public static class CommandEntryPoints
     {
-        const string GroupName = "MC";
+        private const string GroupName = "MC";
+
         #region Test Commands
+
         /// <summary>
         /// AutoCAD .NET: Command Group and Command
         /// http://spiderinnet1.typepad.com/blog/2013/01/autocad-net-command-group-and-command.html
@@ -31,7 +35,8 @@ namespace LS.MapClean.Addin.Main
             Editor editor = Application.DocumentManager.MdiActiveDocument.Editor;
             editor.WriteMessage("\nMapClean test command!");
         }
-        #endregion
+
+        #endregion Test Commands
 
         [CommandMethod(GroupName, "MapClean", CommandFlags.Modal)]
         public static void MapClean()
@@ -50,10 +55,12 @@ namespace LS.MapClean.Addin.Main
             var service = MapCleanService.Instance;
             if (service.Document != currentDoc || !service.ActionAgents.ContainsKey(ActionType.BreakCrossing))
             {
-                var ret = MessageBox.Show("'图形清理'命令主要用在'造封闭地块'之前，如果此DWG中封闭地块已经创建，请使用'多边形拓扑检查'命令检查拓扑错误，是否继续此命令？", "提示", 
+                var ret = MessageBox.Show("'图形清理'命令主要用在'造封闭地块'之前，如果此DWG中封闭地块已经创建，请使用'多边形拓扑检查'命令检查拓扑错误，是否继续此命令？", "提示",
                     MessageBoxButton.YesNo);
                 if (ret == MessageBoxResult.No)
+                {
                     return;
+                }
 
                 service.StartMapCleanSequence(currentDoc);
             }
@@ -76,7 +83,10 @@ namespace LS.MapClean.Addin.Main
                 var ret = MessageBox.Show("'多边形拓扑检查'命令主要用在'造封闭地块'之后，如果此DWG中封闭地块还没创建，请使用'图形清理'命令清理图形错误，是否继续此命令？", "提示",
                     MessageBoxButton.YesNo);
                 if (ret == MessageBoxResult.No)
+                {
                     return;
+                }
+
                 service.StartPolygonCheckSequence(currentDoc);
             }
             else
@@ -92,7 +102,9 @@ namespace LS.MapClean.Addin.Main
         public static void ZeroElevation()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = false;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.NoneZeroElevation });
@@ -123,7 +135,9 @@ namespace LS.MapClean.Addin.Main
             MapCleanService.Instance.StartPolygonCheckConsole(document, ActionType.DuplicateVertexPline);
 
             if (!SetToleranceByEditor(ActionType.DuplicateVertexPline, "设置重复点容差"))
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = true;
             MapCleanService.Instance.SetExecutingActions(new[] { ActionType.DuplicateVertexPline });
@@ -137,7 +151,9 @@ namespace LS.MapClean.Addin.Main
         public static void BreakAllCurves()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = false;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.BreakCrossing });
@@ -151,10 +167,14 @@ namespace LS.MapClean.Addin.Main
         public static void EraseDuplicateCurves()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             if (!SetToleranceByEditor(ActionType.DeleteDuplicates, "设置容差"))
+            {
                 return;
+            }
 
             var service = MapCleanService.Instance;
             service.OnlyCheckPolyline = false;
@@ -169,10 +189,14 @@ namespace LS.MapClean.Addin.Main
         public static void ExtendUndershoots()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             if (!SetToleranceByEditor(ActionType.ExtendUndershoots, "设置容差"))
+            {
                 return;
+            }
 
             var service = MapCleanService.Instance;
             service.OnlyCheckPolyline = false;
@@ -187,10 +211,14 @@ namespace LS.MapClean.Addin.Main
         public static void ApparentIntersections()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             if (!SetToleranceByEditor(ActionType.ApparentIntersection, "设置容差"))
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = false;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.ApparentIntersection });
@@ -204,10 +232,14 @@ namespace LS.MapClean.Addin.Main
         public static void SnapClustered()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             if (!SetToleranceByEditor(ActionType.SnapClustered, "设置容差"))
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = false;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.SnapClustered });
@@ -221,10 +253,14 @@ namespace LS.MapClean.Addin.Main
         public static void EraseDangling()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             if (!SetToleranceByEditor(ActionType.EraseDangling, "设置最大悬挂线长度"))
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = false;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.EraseDangling });
@@ -238,7 +274,10 @@ namespace LS.MapClean.Addin.Main
         public static void EraseZeroAreaLoop()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
+
             MapCleanService.Instance.OnlyCheckPolyline = true;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.ZeroAreaLoop });
             MapCleanService.Instance.Check();
@@ -265,7 +304,9 @@ namespace LS.MapClean.Addin.Main
         public static void ZeroLength()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = false;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.ZeroLength });
@@ -293,10 +334,14 @@ namespace LS.MapClean.Addin.Main
         public static void EraseShort()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             if (!SetToleranceByEditor(ActionType.EraseShort, "设置短线最大长度"))
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = false;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.EraseShort });
@@ -313,7 +358,9 @@ namespace LS.MapClean.Addin.Main
             MapCleanService.Instance.StartPolygonCheckConsole(document, ActionType.EraseShort);
 
             if (!SetToleranceByEditor(ActionType.EraseShort, "设置短线最大长度"))
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = false;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.EraseShort });
@@ -327,13 +374,17 @@ namespace LS.MapClean.Addin.Main
         public static void SmallPolygon()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             if (!SetToleranceByEditor(ActionType.SmallPolygon, "设置最大面积"))
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = true;
-            MapCleanService.Instance.SetExecutingActions(new ActionType[]{ ActionType.SmallPolygon });
+            MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.SmallPolygon });
             MapCleanService.Instance.Check();
         }
 
@@ -347,7 +398,9 @@ namespace LS.MapClean.Addin.Main
             MapCleanService.Instance.StartPolygonCheckConsole(document, ActionType.SmallPolygon);
 
             if (!SetToleranceByEditor(ActionType.SmallPolygon, "设置最大面积"))
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = true;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.SmallPolygon });
@@ -375,7 +428,9 @@ namespace LS.MapClean.Addin.Main
         public static void ArcSegment()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = false;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.ArcSegment });
@@ -403,10 +458,14 @@ namespace LS.MapClean.Addin.Main
         public static void RectifyNearVerticesConsole()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             if (!SetToleranceByEditor(ActionType.RectifyPointDeviation, "设置顶点偏离误差"))
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = false;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.RectifyPointDeviation });
@@ -423,7 +482,9 @@ namespace LS.MapClean.Addin.Main
             MapCleanService.Instance.StartPolygonCheckConsole(document, ActionType.RectifyPointDeviation);
 
             if (!SetToleranceByEditor(ActionType.RectifyPointDeviation, "设置顶点偏离误差"))
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = true;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.RectifyPointDeviation });
@@ -440,7 +501,9 @@ namespace LS.MapClean.Addin.Main
             MapCleanService.Instance.StartPolygonCheckConsole(document, ActionType.SharpCornerPolygon);
 
             if (!SetToleranceByEditor(ActionType.SharpCornerPolygon, "设置多边形内部最小夹角值"))
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = true;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.SharpCornerPolygon });
@@ -454,7 +517,9 @@ namespace LS.MapClean.Addin.Main
         public static void UnclosedPolygon()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = true;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.UnclosedPolygon });
@@ -482,15 +547,18 @@ namespace LS.MapClean.Addin.Main
         public static void IntersectPolygon()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = true;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.IntersectPolygon });
             MapCleanService.Instance.Check();
         }
 
+        //2019年8月6日 16:41:08 By陈杰
         /// <summary>
-        /// 直接检查交叉多边形
+        /// 直接检查交叉多边形 ：即相交多边形检查
         /// </summary>
         [CommandMethod(GroupName, "JCDBXC", CommandFlags.Modal)]
         public static void IntersectPolygonConsole()
@@ -510,13 +578,17 @@ namespace LS.MapClean.Addin.Main
         public static void SmallPolygonGap()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             if (!SetToleranceByEditor(ActionType.SmallPolygonGap, "设置缝隙最大宽度"))
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = true;
-            MapCleanService.Instance.SetExecutingActions(new ActionType[]{ ActionType.SmallPolygonGap});
+            MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.SmallPolygonGap });
             MapCleanService.Instance.Check();
         }
 
@@ -530,7 +602,9 @@ namespace LS.MapClean.Addin.Main
             MapCleanService.Instance.StartPolygonCheckConsole(document, ActionType.SmallPolygonGap);
 
             if (!SetToleranceByEditor(ActionType.SmallPolygonGap, "设置缝隙最大宽度"))
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = true;
             MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.SmallPolygonGap });
@@ -549,7 +623,7 @@ namespace LS.MapClean.Addin.Main
         }
 
         /// <summary>
-        /// 直接检查封闭空地
+        /// 直接检查封闭空地 :注记By陈杰 地块间孔洞
         /// </summary>
         [CommandMethod(GroupName, "DKJKDC", CommandFlags.Modal)]
         public static void PolygonHoleConsole()
@@ -562,6 +636,55 @@ namespace LS.MapClean.Addin.Main
             MapCleanService.Instance.Check();
         }
 
+        //<image url="$(ProjectDir)\DocumentImages\多段线洞口检查.png"/>
+        //Note 使用 NetTopologySuite 库
+        /// <summary>
+        /// 检查 包含岛(洞口)多边形-多段线洞口 未处理洞口
+        /// </summary>
+        [CommandMethod(GroupName, "DDXDK", CommandFlags.Modal)]
+        public static void PolygonIslandConsole()
+        {
+            var document = Application.DocumentManager.MdiActiveDocument;
+            MapCleanService.Instance.StartPolygonCheckConsole(document, ActionType.FindIslandPolygon);
+
+            MapCleanService.Instance.OnlyCheckPolyline = true;
+            MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.FindIslandPolygon });
+            MapCleanService.Instance.Check();
+        }
+
+        /// <summary>
+        /// 检查 多边形包含
+        /// </summary>
+        [CommandMethod(GroupName, "DDXBH", CommandFlags.Modal)]
+        public static void PolygonIncludeConsole()
+        {
+            var doc = Application.DocumentManager.MdiActiveDocument;
+            var service = MapCleanService.Instance;
+            if (service.Document == null)
+            {
+                var ret = MessageBox.Show("'检查 多边形包含'必须先使用'MapClean'命令，是否继续此命令？", "提示",
+                    MessageBoxButton.YesNo);
+                if (ret == MessageBoxResult.No)
+                {
+                    return;
+                }
+                else
+                {
+                    service.StartMapClean(doc);
+                }
+            }
+
+            IEnumerable<ObjectId> polylineIds = service.PrepareObjectIdsForCheck();
+
+            var algorithm = new PolygonIncludeSearcher(doc.Database);
+
+            algorithm.Check(polylineIds);
+            var includeIdPairList = algorithm.IncludePolygons.ToList();
+            //Note 使用Clipper 这里的结果正确 还需要甄别嵌套的情况
+            //<image url="$(ProjectDir)\DocumentImages\多段线洞口检查_嵌套.png"/>
+            doc.Editor.WriteMessage("\n检查发现{0}对包含关系的多段线\n", includeIdPairList.Count);
+        }
+
         /// <summary>
         /// 自交多段线
         /// </summary>
@@ -569,10 +692,12 @@ namespace LS.MapClean.Addin.Main
         public static void SelfIntersect()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             MapCleanService.Instance.OnlyCheckPolyline = true;
-            MapCleanService.Instance.SetExecutingActions(new ActionType[]{ ActionType.SelfIntersect});
+            MapCleanService.Instance.SetExecutingActions(new ActionType[] { ActionType.SelfIntersect });
             MapCleanService.Instance.Check();
         }
 
@@ -656,7 +781,7 @@ namespace LS.MapClean.Addin.Main
             MapCleanService.Instance.StartPolygonCheckConsole(document, ActionType.FindIslandPolygon);
 
             MapCleanService.Instance.OnlyCheckPolyline = true;
-            MapCleanService.Instance.SetExecutingActions(new [] { ActionType.FindIslandPolygon });
+            MapCleanService.Instance.SetExecutingActions(new[] { ActionType.FindIslandPolygon });
             MapCleanService.Instance.Check();
         }
 
@@ -667,7 +792,9 @@ namespace LS.MapClean.Addin.Main
         public static void CheckAll()
         {
             if (!IsCurrentDocValid())
+            {
                 return;
+            }
 
             var service = MapCleanService.Instance;
             if (service.ActionsSettingViewModel != null)
@@ -701,7 +828,9 @@ namespace LS.MapClean.Addin.Main
 
             var tolerance = UserInputTolerance(message, action.Tolerance);
             if (tolerance == null)
+            {
                 return false;
+            }
 
             action.Tolerance = tolerance.Value;
             return true;
@@ -712,15 +841,22 @@ namespace LS.MapClean.Addin.Main
             var editor = Application.DocumentManager.MdiActiveDocument.Editor;
             var tolerance = defaultVal;
             var msg = String.Format("\n{0}:", message);
-            var option = new PromptDoubleOptions(msg);
-            option.AllowNone = true;
-            option.DefaultValue = defaultVal;
+            var option = new PromptDoubleOptions(msg)
+            {
+                AllowNone = true,
+                DefaultValue = defaultVal
+            };
             var result = editor.GetDouble(option);
             if (result.Status == PromptStatus.Cancel)
+            {
                 return null;
+            }
 
             if (result.Status == PromptStatus.OK)
+            {
                 tolerance = result.Value;
+            }
+
             return tolerance;
         }
 
@@ -797,13 +933,17 @@ namespace LS.MapClean.Addin.Main
                 }
 
                 if (result.Status == PromptStatus.Cancel)
+                {
                     break;
+                }
 
                 editor.WriteMessage("\n选择无效");
             }
 
             if (polylineId.IsNull)
+            {
                 return;
+            }
 
             using (var transaction = database.TransactionManager.StartTransaction())
             {
@@ -816,7 +956,7 @@ namespace LS.MapClean.Addin.Main
                 var polyline = new Autodesk.AutoCAD.DatabaseServices.Polyline();
                 for (int i = 0; i < hullPoints.Length; i++)
                 {
-                    polyline.AddVertexAt(i, new Point2d(hullPoints[i].X, hullPoints[i].Y), 0, 1, 1 );
+                    polyline.AddVertexAt(i, new Point2d(hullPoints[i].X, hullPoints[i].Y), 0, 1, 1);
                 }
                 polyline.ColorIndex = 2;
 
@@ -847,13 +987,17 @@ namespace LS.MapClean.Addin.Main
                 }
 
                 if (result.Status == PromptStatus.Cancel)
+                {
                     break;
+                }
 
                 editor.WriteMessage("\n选择无效");
             }
 
             if (polylineId.IsNull)
+            {
                 return;
+            }
 
             using (var transaction = database.TransactionManager.StartTransaction())
             {
@@ -865,6 +1009,7 @@ namespace LS.MapClean.Addin.Main
                     polyline.AddVertexAt(i, new Point2d(boundingBox[i].X, boundingBox[i].Y), 0, 1, 1);
                 }
                 polyline.ColorIndex = 2;
+                polyline.Closed = true;
 
                 var modelspaceId = SymbolUtilityServices.GetBlockModelSpaceId(database);
                 var modelspace = transaction.GetObject(modelspaceId, OpenMode.ForWrite) as BlockTableRecord;
@@ -883,9 +1028,12 @@ namespace LS.MapClean.Addin.Main
             editor.WriteMessage("\n选择一条或几条闭合曲线：\n");
             var result = editor.GetSelection();
             if (result.Status != PromptStatus.OK)
+            {
                 return;
+            }
+
             var polylineids = result.Value.GetObjectIds();
-            using(var tolerance = new SafeToleranceOverride(null, null))
+            using (var tolerance = new SafeToleranceOverride(null, null))
             using (var transaction = drawingDb.TransactionManager.StartTransaction())
             {
                 var polylines = new List<Polyline>();
@@ -907,7 +1055,6 @@ namespace LS.MapClean.Addin.Main
                 }
                 transaction.Commit();
             }
-            
         }
 
         [CommandMethod(GroupName, "TestLoop", CommandFlags.Modal)]
@@ -919,7 +1066,9 @@ namespace LS.MapClean.Addin.Main
             editor.WriteMessage("\n选择一条或几条曲线：\n");
             var result = editor.GetSelection();
             if (result.Status != PromptStatus.OK)
+            {
                 return;
+            }
 
             var polylineids = result.Value.GetObjectIds();
             var polygons = MinimalLoopSearcher2.GetAllLoopPolylines(polylineids, editor.Document);
@@ -946,7 +1095,10 @@ namespace LS.MapClean.Addin.Main
             editor.WriteMessage("\n选择一条或几条闭合曲线：\n");
             var result = editor.GetSelection();
             if (result.Status != PromptStatus.OK)
+            {
                 return;
+            }
+
             var hatchloopIds = result.Value.GetObjectIds();
             using (var transaction = drawingDb.TransactionManager.StartTransaction())
             {
@@ -972,10 +1124,14 @@ namespace LS.MapClean.Addin.Main
                     var loopType = HatchLoopTypes.Outermost;
                     var entity = transaction.GetObject(id, OpenMode.ForRead);
                     if (entity is DBText)
+                    {
                         loopType = HatchLoopTypes.Textbox;
+                    }
 
-                    var ids = new ObjectIdCollection();
-                    ids.Add(id);
+                    var ids = new ObjectIdCollection
+                    {
+                        id
+                    };
                     hat.AppendLoop(loopType, ids); // error here....
                 }
 
@@ -1006,30 +1162,38 @@ namespace LS.MapClean.Addin.Main
                 }
 
                 if (result.Status == PromptStatus.Cancel)
+                {
                     break;
+                }
 
                 editor.WriteMessage("\n选择无效");
             }
 
             if (polylineId.IsNull)
+            {
                 return;
+            }
 
             var pointResult = editor.GetPoint("选择线上一点");
             if (pointResult.Status != PromptStatus.OK)
+            {
                 return;
+            }
+
             var point = pointResult.Value;
             using (var transaction = currentDoc.Database.TransactionManager.StartTransaction())
             {
                 var curve = (Curve)transaction.GetObject(polylineId, OpenMode.ForRead);
                 var param = GeometryUtils.GetPointParameter(curve, point);
-                if(param != null)
+                if (param != null)
+                {
                     editor.WriteMessage("\n参数值:{0}", param.Value);
+                }
 
                 param = GeometryUtils.GetPointParameter(curve, curve.EndPoint);
                 editor.WriteMessage("\n末点参数值:{0}", param.Value);
                 editor.WriteMessage("\n末尾参数值:{0}", curve.EndParam);
             }
-            
         }
 
         [CommandMethod(GroupName, "UNPL", CommandFlags.Modal)]
@@ -1054,7 +1218,7 @@ namespace LS.MapClean.Addin.Main
                     int i = 0;
                     foreach (var point in region.Contour)
                     {
-                        polyline.AddVertexAt(i++, new Point2d(point.X, point.Y), 0,0,0);
+                        polyline.AddVertexAt(i++, new Point2d(point.X, point.Y), 0, 0, 0);
                     }
                     polyline.Closed = true;
                     polyline.ColorIndex = 3;
@@ -1068,8 +1232,79 @@ namespace LS.MapClean.Addin.Main
             currentDoc.Editor.WriteMessage("\n图形分区花费{0}毫秒\n", stopWatch.ElapsedMilliseconds);
         }
 
+        #region 2019年8月6日 15:09:20 陈杰添加
+
+        //<image url="$(ProjectDir)\DocumentImages\SearchClosedLoop.png"/>
+        /// <summary>
+        /// 搜索闭环 找一系列多段线(如果是任意的先作求点打断预处理)
+        /// </summary>
+        [CommandMethod(GroupName, "SCL", CommandFlags.Modal)]
+        public static void SearchClosedLoop()
+        {
+            //选择多边形
+            var db = Application.DocumentManager.MdiActiveDocument.Database;
+            var ed = Application.DocumentManager.MdiActiveDocument.Editor;
+
+            ed.WriteMessage("\n选择一条或几条曲线：\n");
+            var result = ed.GetSelection();
+            if (result.Status != PromptStatus.OK)
+            {
+                return;
+            }
+
+            var ids = result.Value.GetObjectIds();
+
+            //搜索闭环
+            Transaction tr = db.TransactionManager.StartTransaction();
+
+            MinimalLoopSearcher minimalLoop = new MinimalLoopSearcher(tr);
+            minimalLoop.Check(ids, out List<Region> regions);
+            //试用另外一种
+            //MinimalLoopSearcher2
+            var polylines = MinimalLoopSearcher2.Search(ids, ed.Document).ToList();
+
+            using (tr)
+            {
+                var modelspaceId = SymbolUtilityServices.GetBlockModelSpaceId(db);
+                var modelspace = (BlockTableRecord)tr.GetObject(modelspaceId, OpenMode.ForWrite);
+
+                //输出面域 绿色
+                //foreach (var reg in regions)
+                //{
+                //    reg.Color = Color.FromColorIndex(ColorMethod.ByAci, 3);
+                //    modelspace.AppendEntity(reg);
+                //    tr.AddNewlyCreatedDBObject(reg, true);
+                //}
+                //输出多段线 红色
+                foreach (var pl in polylines)
+                {
+                    pl.Color = Color.FromColorIndex(ColorMethod.ByAci, 1);
+
+                    //2023-11-20 使用偏移的线
+
+                    var offsetPolys = pl.Offset(2, PolylineExtension.OffsetSide.In);
+
+                    // Step through the new objects created
+                    foreach (Polyline offsetPl in offsetPolys)
+                    {
+                        // Add each offset object
+                        modelspace.AppendEntity(offsetPl);
+                        tr.AddNewlyCreatedDBObject(offsetPl, true);
+                    }
+                    //modelspace.AppendEntity(pl);
+                    //tr.AddNewlyCreatedDBObject(pl, true);
+                }
+                tr.Commit();
+            }
+
+            //绘制到图面
+            //db.AddToModelSpace(regions.ToArray());
+        }
+
+        #endregion 2019年8月6日 15:09:20 陈杰添加
 
         #region Spread Points Utils
+
         /// <summary>
         /// 展野外测点点号
         /// </summary>
@@ -1077,7 +1312,7 @@ namespace LS.MapClean.Addin.Main
         public static void InsertSpreadPointsWithId()
         {
             var currentDoc = Application.DocumentManager.MdiActiveDocument;
-            SpreadPointCommands.ImportSpreadPoints(currentDoc, insertId: true, insertCode:false);
+            SpreadPointCommands.ImportSpreadPoints(currentDoc, insertId: true, insertCode: false);
         }
 
         /// <summary>
@@ -1087,7 +1322,7 @@ namespace LS.MapClean.Addin.Main
         public static void InsertSpreadPointWithCode()
         {
             var currentDoc = Application.DocumentManager.MdiActiveDocument;
-            SpreadPointCommands.ImportSpreadPoints(currentDoc, insertId:false, insertCode: true);
+            SpreadPointCommands.ImportSpreadPoints(currentDoc, insertId: false, insertCode: true);
         }
 
         /// <summary>
@@ -1097,7 +1332,7 @@ namespace LS.MapClean.Addin.Main
         public static void InsertSpreadPoint()
         {
             var currentDoc = Application.DocumentManager.MdiActiveDocument;
-            SpreadPointCommands.ImportSpreadPoints(currentDoc, insertId:false, insertCode: false);
+            SpreadPointCommands.ImportSpreadPoints(currentDoc, insertId: false, insertCode: false);
         }
 
         /// <summary>
@@ -1109,7 +1344,8 @@ namespace LS.MapClean.Addin.Main
             var currentDoc = Application.DocumentManager.MdiActiveDocument;
             SpreadPointCommands.UpdateSpreadPoints(currentDoc);
         }
-        #endregion
+
+        #endregion Spread Points Utils
 
         [CommandMethod(GroupName, "FXSB", CommandFlags.Modal)]
         public static void RecognizeRoomAndWalls()

@@ -26,10 +26,11 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -41,17 +42,25 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AcCoreMgd">
-      <HintPath>..\..\..\3rdParty\ObjectARX\inc\AcCoreMgd.dll</HintPath>
+    <Reference Include="AcCoreMgd, Version=20.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\ObjectARX 2016\inc\AcCoreMgd.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="AcDbMgd">
-      <HintPath>..\..\..\3rdParty\ObjectARX\inc\AcDbMgd.dll</HintPath>
+    <Reference Include="AcDbMgd, Version=20.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\ObjectARX 2016\inc\AcDbMgd.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="AcMgd">
-      <HintPath>..\..\..\3rdParty\ObjectARX\inc\AcMgd.dll</HintPath>
+    <Reference Include="AcMgd, Version=20.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\ObjectARX 2016\inc\AcMgd.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="AcMPolygonMGD">
-      <HintPath>..\..\..\3rdParty\ObjectARX\AcMPolygonMGD.dll</HintPath>
+    <Reference Include="AcMPolygonMGD, Version=20.1.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files\Autodesk\AutoCAD 2016\AcMPolygonMGD.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="GeoAPI">
       <HintPath>..\..\..\3rdParty\NetTopologySuite\GeoAPI.dll</HintPath>

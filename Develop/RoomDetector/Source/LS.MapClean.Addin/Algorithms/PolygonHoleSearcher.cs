@@ -13,6 +13,7 @@ namespace LS.MapClean.Addin.Algorithms
     public class PolygonHoleSearcher : AlgorithmWithEditor
     {
         private readonly List<Polyline> _holes = new List<Polyline>();
+
         public IEnumerable<Polyline> Holes
         {
             get { return _holes; }
@@ -23,7 +24,7 @@ namespace LS.MapClean.Addin.Algorithms
         {
         }
 
-        public override void Check(IEnumerable<Autodesk.AutoCAD.DatabaseServices.ObjectId> selectedObjectIds)
+        public override void Check(IEnumerable<ObjectId> selectedObjectIds)
         {
             if (!selectedObjectIds.Any())
                 return;
@@ -42,7 +43,7 @@ namespace LS.MapClean.Addin.Algorithms
             var clipper = new List<List<IntPoint>>(1);
 
             var database = Editor.Document.Database;
-            Extents3d extents = new Extents3d(new Point3d(0,0,0), new Point3d(1,1,0));
+            Extents3d extents = new Extents3d(new Point3d(0, 0, 0), new Point3d(1, 1, 0));
             bool first = true;
 
             // Use all polygons to make up clipper.
@@ -82,14 +83,14 @@ namespace LS.MapClean.Addin.Algorithms
                     if (vertices[0] == vertices[vertices.Count - 1])
                         vertices.RemoveAt(vertices.Count - 1);
 
-                    clipper.Add(vertices.Select(it => new IntPoint(it.X / precision, it.Y/precision)).ToList());
+                    clipper.Add(vertices.Select(it => new IntPoint(it.X / precision, it.Y / precision)).ToList());
                 }
                 transaction.Commit();
             }
 
             // Create subject rectangle.
-           
-            var vector = (extents.MaxPoint - extents.MinPoint)*0.1;
+
+            var vector = (extents.MaxPoint - extents.MinPoint) * 0.1;
             var minPoint = extents.MinPoint - vector;
             var maxPoint = extents.MaxPoint + vector;
             subject.Add(new List<IntPoint>()
@@ -99,7 +100,6 @@ namespace LS.MapClean.Addin.Algorithms
                 new IntPoint(maxPoint.X/precision, maxPoint.Y/precision),
                 new IntPoint(maxPoint.X/precision, minPoint.Y/precision)
             });
-
 
             var result = new List<List<IntPoint>>();
             var cpr = new Clipper();
@@ -114,7 +114,7 @@ namespace LS.MapClean.Addin.Algorithms
             foreach (var path in result)
             {
                 // Ignore the outmost loop.
-                if (path.Contains(new IntPoint(minPoint.X/precision, minPoint.Y/precision)))
+                if (path.Contains(new IntPoint(minPoint.X / precision, minPoint.Y / precision)))
                     continue;
 
                 var points = path.Select(it => new Point2d(it.X * precision, it.Y * precision)).ToList();
@@ -139,7 +139,7 @@ namespace LS.MapClean.Addin.Algorithms
 
         private Polyline CreatePolygon(Point2d[] points)
         {
-            var polyline = new Autodesk.AutoCAD.DatabaseServices.Polyline();
+            var polyline = new Polyline();
             for (int i = 0; i < points.Length; i++)
                 polyline.AddVertexAt(i, points[i], 0, 0, 0);
             polyline.Closed = true;

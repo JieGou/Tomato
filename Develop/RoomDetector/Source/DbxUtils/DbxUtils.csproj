@@ -63,14 +63,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AcCoreMgd">
-      <HintPath>..\..\..\3rdParty\ObjectARX\inc\AcCoreMgd.dll</HintPath>
+      <HintPath>C:\ObjectARX 2016\inc\AcCoreMgd.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="AcDbMgd, Version=18.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\3rdParty\ObjectARX\inc\AcDbMgd.dll</HintPath>
+    <Reference Include="AcDbMgd">
+      <HintPath>C:\ObjectARX 2016\inc\AcDbMgd.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="AcMgd">
-      <HintPath>..\..\..\3rdParty\ObjectARX\inc\AcMgd.dll</HintPath>
+      <HintPath>C:\ObjectARX 2016\inc\AcMgd.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -83,6 +85,7 @@
   <ItemGroup>
     <Compile Include="Extensions\DictionaryExtensions.cs" />
     <Compile Include="Extensions\EqualsUtilities.cs" />
+    <Compile Include="Extensions\PolylineExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -132,6 +135,7 @@
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

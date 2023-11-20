@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Autodesk.AutoCAD.ApplicationServices;
+﻿using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using DbxUtils.Utils;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace LS.MapClean.Addin.Main
 {
@@ -29,6 +29,10 @@ namespace LS.MapClean.Addin.Main
             // 6. Show the walls and rooms
         }
 
+        /// <summary>
+        /// 获取当前模型空间中所有可见的直线或多段线图元
+        /// </summary>
+        /// <returns>图元集合</returns>
         private static IEnumerable<ObjectId> GetLinearEntities()
         {
             var result = new List<ObjectId>();
@@ -36,7 +40,7 @@ namespace LS.MapClean.Addin.Main
             using (var transaction = curDb.TransactionManager.StartTransaction())
             {
                 var modelspaceId = SymbolUtilityServices.GetBlockModelSpaceId(curDb);
-                var modelspace = (BlockTableRecord) transaction.GetObject(modelspaceId, OpenMode.ForRead);
+                var modelspace = (BlockTableRecord)transaction.GetObject(modelspaceId, OpenMode.ForRead);
                 foreach (ObjectId objId in modelspace)
                 {
                     var entity = transaction.GetObject(objId, OpenMode.ForRead);
@@ -51,18 +55,35 @@ namespace LS.MapClean.Addin.Main
             return result;
         }
 
+        /// <summary>
+        /// 图元是否是多段线或直线，并且可见
+        /// </summary>
+        /// <param name="entity">图元</param>
+        /// <param name="transaction">事务</param>
+        /// <returns>是true 否则返回false</returns>
+
         private static bool IsVisibleLinearEntity(DBObject entity, Transaction transaction)
         {
             var type = entity.GetType();
-            if (type != typeof (Polyline) && type != typeof (Line))
+            if (type != typeof(Polyline) && type != typeof(Line))
+            {
                 return false;
+            }
+
             var layer = (LayerTableRecord)transaction.GetObject(((Entity)entity).LayerId, OpenMode.ForRead);
             if (layer.IsOff || layer.IsFrozen)
+            {
                 return false;
+            }
 
             return true;
         }
 
+        /// <summary>
+        /// 获得房间轮廓
+        /// </summary>
+        /// <param name="linearIds">直线和多段线集合</param>
+        /// <returns>返回房间轮廓信息</returns>
         private static ApartmentContourInfo GetApartmentContour(IEnumerable<ObjectId> linearIds)
         {
             var info = ApartmentContour.CalcContour(Application.DocumentManager.MdiActiveDocument, linearIds);
@@ -117,7 +138,11 @@ namespace LS.MapClean.Addin.Main
                         List<LineSegment3d> parEqualSegs = new List<LineSegment3d>();
                         for (var j = 0; j < innerSegments.Count; j++)
                         {
-                            if (i == j || innerSegments[j] == null) continue; // itself
+                            if (i == j || innerSegments[j] == null)
+                            {
+                                continue; // itself
+                            }
+
                             if (thisSeg.IsParallelTo(innerSegments[j]) &&
                                 (startLine.IsOn(innerSegments[j].StartPoint, tol) && endLine.IsOn(innerSegments[j].EndPoint, tol)) ||
                                 (startLine.IsOn(innerSegments[j].EndPoint, tol) && endLine.IsOn(innerSegments[j].StartPoint, tol)))
@@ -136,13 +161,19 @@ namespace LS.MapClean.Addin.Main
                             //direction = (thisSeg.MidPoint - basePt).GetNormal();
                             // sort them by direction
                             parEqualSegs.Add(thisSeg);
-                            parEqualSegs.Sort((seg1, seg2) => {
+                            parEqualSegs.Sort((seg1, seg2) =>
+                            {
                                 Vector3d vector1 = seg1.MidPoint - basePt;
                                 Vector3d vector2 = seg2.MidPoint - basePt;
                                 if (Math.Abs(vector1.DotProduct(direction) - vector2.DotProduct(direction)) < 0.001)
+                                {
                                     return 0;
+                                }
                                 else if (vector1.DotProduct(direction) > vector2.DotProduct(direction))
+                                {
                                     return 1;
+                                }
+
                                 return -1;
                             });
 
@@ -173,12 +204,17 @@ namespace LS.MapClean.Addin.Main
                     }
                 }
 
-                innerSegments.RemoveAll((seg) => {
-                    var index = windowGroup.FindIndex((window) => {
+                innerSegments.RemoveAll((seg) =>
+                {
+                    var index = windowGroup.FindIndex((window) =>
+                    {
                         return window.Contains(seg);
                     });
                     if (index != -1)
+                    {
                         return true;
+                    }
+
                     return false;
                 });
                 // end window
@@ -196,9 +232,11 @@ namespace LS.MapClean.Addin.Main
                     {
                         var start = window[j].StartPoint;
                         var end = window[j].EndPoint;
-                        var line = new Line(start, end);
-                        line.Color = color1;
-                        line.LayerId = layerId;
+                        var line = new Line(start, end)
+                        {
+                            Color = color1,
+                            LayerId = layerId
+                        };
 
                         modelspace.AppendEntity(line);
                         transaction.AddNewlyCreatedDBObject(line, add: true);
@@ -222,10 +260,11 @@ namespace LS.MapClean.Addin.Main
 
                 foreach (var segment in innerSegments)
                 {
-                    var line = new Line(segment.StartPoint, segment.EndPoint);
-
-                    line.Color = color;
-                    line.LayerId = layerId;
+                    var line = new Line(segment.StartPoint, segment.EndPoint)
+                    {
+                        Color = color,
+                        LayerId = layerId
+                    };
                     modelspace.AppendEntity(line);
                     transaction.AddNewlyCreatedDBObject(line, add: true);
                 }
@@ -243,7 +282,9 @@ namespace LS.MapClean.Addin.Main
                 wallInfo = WallRecognizer.getWallinfors(outLines, allLines);
             }
             if (wallInfo == null)
+            {
                 return;
+            }
 
             // Test Code!
             var visited = new HashSet<WallInfor>();
@@ -264,17 +305,21 @@ namespace LS.MapClean.Addin.Main
                     {
                         break;
                     }
-                    var line = new Line(currentInfo.outline.StartPoint, currentInfo.outline.EndPoint);
-                    line.Color = color;
-                    line.LayerId = layerId;
+                    var line = new Line(currentInfo.outline.StartPoint, currentInfo.outline.EndPoint)
+                    {
+                        Color = color,
+                        LayerId = layerId
+                    };
                     modelspace.AppendEntity(line);
                     transaction.AddNewlyCreatedDBObject(line, add: true);
 
                     foreach (var innerSeg in currentInfo.innerlines)
                     {
-                        var innerLine = new Line(innerSeg.StartPoint, innerSeg.EndPoint);
-                        innerLine.Color = color;
-                        innerLine.LayerId = layerId;
+                        var innerLine = new Line(innerSeg.StartPoint, innerSeg.EndPoint)
+                        {
+                            Color = color,
+                            LayerId = layerId
+                        };
                         modelspace.AppendEntity(innerLine);
                         transaction.AddNewlyCreatedDBObject(innerLine, add: true);
                     }

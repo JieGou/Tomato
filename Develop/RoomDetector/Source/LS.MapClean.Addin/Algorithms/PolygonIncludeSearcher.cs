@@ -13,8 +13,12 @@ namespace LS.MapClean.Addin.Algorithms
 {
     public class PolygonIncludeSearcher : AlgorithmWithDatabase
     {
+        /// <summary>
+        /// 包含曲线id对列表 <see cref="KeyValuePair"/>&lt;大曲线id,小曲线id&gt;
+        /// </summary>
         private List<KeyValuePair<ObjectId, ObjectId>> _includePolygons =
             new List<KeyValuePair<ObjectId, ObjectId>>();
+
         public IEnumerable<KeyValuePair<ObjectId, ObjectId>> IncludePolygons
         {
             get { return _includePolygons; }
@@ -59,12 +63,12 @@ namespace LS.MapClean.Addin.Algorithms
                     var curve = transaction.GetObject(objectId, OpenMode.ForRead) as Curve;
                     var extents = curve.GeometricExtents;
                     var nearVertices = kdTree.BoxedRange(extents.MinPoint.ToArray(), extents.MaxPoint.ToArray());
-                    
+
                     foreach (var curveVertex in nearVertices)
                     {
-                        if (curveVertex.Id == objectId || 
+                        if (curveVertex.Id == objectId ||
                             analyzed.Contains(new KeyValuePair<ObjectId, ObjectId>(objectId, curveVertex.Id)))
-                        { 
+                        {
                             continue;
                         }
 
@@ -111,6 +115,13 @@ namespace LS.MapClean.Addin.Algorithms
         //    return true;
         //}
 
+        /// <summary>
+        /// 判断源曲线是否包含目标曲线
+        /// </summary>
+        /// <param name="sourceCurve">源曲线</param>
+        /// <param name="targetCurve">目标曲线</param>
+        /// <param name="transaction">事务</param>
+        /// <returns></returns>
         public static bool IsInclude(Curve sourceCurve, Curve targetCurve, Transaction transaction)
         {
             var sourceVertices = CurveUtils.GetDistinctVertices(sourceCurve, transaction);
@@ -118,6 +129,12 @@ namespace LS.MapClean.Addin.Algorithms
             return IsInclude(sourceVertices, targetVertices);
         }
 
+        /// <summary>
+        /// 判断源点集范围是否包含目标点集
+        /// </summary>
+        /// <param name="sourceVertices">源点集</param>
+        /// <param name="targetVertices">目标点集</param>
+        /// <returns></returns>
         public static bool IsInclude(List<Point3d> sourceVertices, List<Point3d> targetVertices)
         {
             // Use clipper to calculate the intersection
@@ -126,9 +143,11 @@ namespace LS.MapClean.Addin.Algorithms
             var clipper = new List<List<IntPoint>>(1);
             var result = new List<List<IntPoint>>();
 
+            //源点集 大的范围
             var subjectPath = sourceVertices.Select(it => new IntPoint(it.X / precision, it.Y / precision)).ToList();
             subject.Add(subjectPath);
 
+            //目标点庥 小范围
             var clipperPath = targetVertices.Select(it => new IntPoint(it.X / precision, it.Y / precision)).ToList();
             clipper.Add(clipperPath);
 
@@ -141,16 +160,24 @@ namespace LS.MapClean.Addin.Algorithms
             {
                 return false;
             }
-
+            //相交结果路径
             var path = result[0];
             var points = path.Select(it => new Point3d(it.X * precision, it.Y * precision, 0.0)).ToList();
             // 转换过程中会有精度损失，因此在调用AreDuplicateEntities比较的时候用newTargetVertices。
             var newTargetVertices = clipperPath.Select(it => new Point3d(it.X * precision, it.Y * precision, 0.0)).ToList();
+
+            //Clipper相交得到的结果如果跟小范围路径相同 即判断包含
             if (AreDuplicateEntities(newTargetVertices, points))
                 return true;
             return false;
         }
 
+        /// <summary>
+        /// 判断点集是否相同
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
         public static bool AreDuplicateEntities(List<Point3d> source, List<Point3d> target)
         {
             if (source == null || source.Count == 0 || target == null || target.Count == 0)

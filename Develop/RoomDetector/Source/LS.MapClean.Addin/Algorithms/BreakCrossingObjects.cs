@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Windows;
-using Autodesk.AutoCAD.ApplicationServices;
+﻿using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
@@ -13,6 +6,13 @@ using GeoAPI.Geometries;
 using LS.MapClean.Addin.QuadTree;
 using LS.MapClean.Addin.Utils;
 using NetTopologySuite.Index.Strtree;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows;
 
 namespace LS.MapClean.Addin.Algorithms
 {
@@ -22,286 +22,286 @@ namespace LS.MapClean.Addin.Algorithms
         public Point3dCollection Points;
     }
 
-//    public class BreakCrossingObjectsBsp : AlgorithmWithEditor
-//    {
-//        private IEnumerable<CurveCrossingInfo> _crossingInfos;
-//        public IEnumerable<CurveCrossingInfo> CrossingInfos
-//        {
-//            get { return _crossingInfos; }
-//        }
+    //    public class BreakCrossingObjectsBsp : AlgorithmWithEditor
+    //    {
+    //        private IEnumerable<CurveCrossingInfo> _crossingInfos;
+    //        public IEnumerable<CurveCrossingInfo> CrossingInfos
+    //        {
+    //            get { return _crossingInfos; }
+    //        }
 
-//        public BreakCrossingObjectsBsp(Editor editor)
-//            : base(editor)
-//        {
-//        }
+    //        public BreakCrossingObjectsBsp(Editor editor)
+    //            : base(editor)
+    //        {
+    //        }
 
-//        public override void Check(IEnumerable<ObjectId> selectedObjectIds)
-//        {
-//#if DEBUG
-//            var watch = Stopwatch.StartNew();
-//#endif
-//            if (selectedObjectIds == null || !selectedObjectIds.Any())
-//                return;
+    //        public override void Check(IEnumerable<ObjectId> selectedObjectIds)
+    //        {
+    //#if DEBUG
+    //            var watch = Stopwatch.StartNew();
+    //#endif
+    //            if (selectedObjectIds == null || !selectedObjectIds.Any())
+    //                return;
 
-//            // 调低计算精度，否则有些交叉因为精度问题算不出来
-//            var oldTolerance = DoubleExtensions.STolerance;
-//            DoubleExtensions.STolerance = 1e-04;
-//            var database = Editor.Document.Database;
-//            using (var transaction = database.TransactionManager.StartTransaction())
-//            {
-//                var curve2DBspBuilder = new Curve2dBspBuilder(selectedObjectIds, transaction);
-//                IEnumerable<CurveCrossingInfo> duplicateEntities = null;
-//                _crossingInfos = curve2DBspBuilder.SearchRealIntersections(true, out duplicateEntities);
+    //            // 调低计算精度，否则有些交叉因为精度问题算不出来
+    //            var oldTolerance = DoubleExtensions.STolerance;
+    //            DoubleExtensions.STolerance = 1e-04;
+    //            var database = Editor.Document.Database;
+    //            using (var transaction = database.TransactionManager.StartTransaction())
+    //            {
+    //                var curve2DBspBuilder = new Curve2dBspBuilder(selectedObjectIds, transaction);
+    //                IEnumerable<CurveCrossingInfo> duplicateEntities = null;
+    //                _crossingInfos = curve2DBspBuilder.SearchRealIntersections(true, out duplicateEntities);
 
-//                transaction.Commit();
-//            }
-//            // 恢复默认的计算精度值
-//            DoubleExtensions.STolerance = oldTolerance;
+    //                transaction.Commit();
+    //            }
+    //            // 恢复默认的计算精度值
+    //            DoubleExtensions.STolerance = oldTolerance;
 
-//            // the code that you want to measure comes here
-//#if DEBUG
-//            watch.Stop();
-//            var elapsedMs = watch.ElapsedMilliseconds;
-//            Editor.WriteMessage("\n查找交叉对象花费时间{0}毫秒", elapsedMs);
-//#endif
-//        }
+    //            // the code that you want to measure comes here
+    //#if DEBUG
+    //            watch.Stop();
+    //            var elapsedMs = watch.ElapsedMilliseconds;
+    //            Editor.WriteMessage("\n查找交叉对象花费时间{0}毫秒", elapsedMs);
+    //#endif
+    //        }
 
-//        public Dictionary<ObjectId, IEnumerable<ObjectId>> Fix(bool eraseOld)
-//        {
-//            var result = new Dictionary<ObjectId, IEnumerable<ObjectId>>();
-//            if (_crossingInfos == null || !_crossingInfos.Any())
-//                return result;
+    //        public Dictionary<ObjectId, IEnumerable<ObjectId>> Fix(bool eraseOld)
+    //        {
+    //            var result = new Dictionary<ObjectId, IEnumerable<ObjectId>>();
+    //            if (_crossingInfos == null || !_crossingInfos.Any())
+    //                return result;
 
-//            // Group intersect points by ObjectId.
-//            Dictionary<ObjectId, List<Point3d>> intersects = null;
-//            Dictionary<ObjectId, List<Point3d>> selfIntersects = null;
-//            GroupIntersectPoints(out intersects, out selfIntersects);
+    //            // Group intersect points by ObjectId.
+    //            Dictionary<ObjectId, List<Point3d>> intersects = null;
+    //            Dictionary<ObjectId, List<Point3d>> selfIntersects = null;
+    //            GroupIntersectPoints(out intersects, out selfIntersects);
 
-//            var document = Editor.Document;
-//            using (var docLock = document.LockDocument())
-//            {
-//                using (var transaction = document.Database.TransactionManager.StartTransaction())
-//                {
-//                    var modelSpace = (BlockTableRecord)transaction.GetObject(SymbolUtilityServices.GetBlockModelSpaceId(document.Database), OpenMode.ForWrite);
-//                    foreach (var pair in intersects)
-//                    {
-//                        var ids = SplitCurve(pair.Key, pair.Value, modelSpace, transaction, false, eraseOld);
-//                        result.Add(pair.Key, ids);
-//                    }
+    //            var document = Editor.Document;
+    //            using (var docLock = document.LockDocument())
+    //            {
+    //                using (var transaction = document.Database.TransactionManager.StartTransaction())
+    //                {
+    //                    var modelSpace = (BlockTableRecord)transaction.GetObject(SymbolUtilityServices.GetBlockModelSpaceId(document.Database), OpenMode.ForWrite);
+    //                    foreach (var pair in intersects)
+    //                    {
+    //                        var ids = SplitCurve(pair.Key, pair.Value, modelSpace, transaction, false, eraseOld);
+    //                        result.Add(pair.Key, ids);
+    //                    }
 
-//                    foreach (var pair in selfIntersects)
-//                    {
-//                        var ids = SplitCurve(pair.Key, pair.Value, modelSpace, transaction, true, eraseOld);
-//                        result.Add(pair.Key, ids);
-//                    }
+    //                    foreach (var pair in selfIntersects)
+    //                    {
+    //                        var ids = SplitCurve(pair.Key, pair.Value, modelSpace, transaction, true, eraseOld);
+    //                        result.Add(pair.Key, ids);
+    //                    }
 
-//                    transaction.Commit();
-//                }
-//            }
-//            return result;
-//        }
+    //                    transaction.Commit();
+    //                }
+    //            }
+    //            return result;
+    //        }
 
-//        public IEnumerable<Entity> DummyFix()
-//        {
-//            if (_crossingInfos == null || !_crossingInfos.Any())
-//                return new Entity[0];
+    //        public IEnumerable<Entity> DummyFix()
+    //        {
+    //            if (_crossingInfos == null || !_crossingInfos.Any())
+    //                return new Entity[0];
 
-//            // Group intersect points by ObjectId.
-//            Dictionary<ObjectId, List<Point3d>> intersects = null;
-//            Dictionary<ObjectId, List<Point3d>> selfIntersects = null;
-//            GroupIntersectPoints(out intersects, out selfIntersects);
+    //            // Group intersect points by ObjectId.
+    //            Dictionary<ObjectId, List<Point3d>> intersects = null;
+    //            Dictionary<ObjectId, List<Point3d>> selfIntersects = null;
+    //            GroupIntersectPoints(out intersects, out selfIntersects);
 
-//            var result = new List<Entity>();
-//            var document = Editor.Document;
-//            using (var docLock = document.LockDocument())
-//            {
-//                using (var transaction = document.Database.TransactionManager.StartTransaction())
-//                {
-//                    var modelSpace = (BlockTableRecord)transaction.GetObject(SymbolUtilityServices.GetBlockModelSpaceId(document.Database), OpenMode.ForWrite);
-//                    foreach (var pair in intersects)
-//                    {
-//                        var ents = DummySplitCurve(pair.Key, pair.Value, modelSpace, transaction, false);
-//                        foreach (Entity ent in ents)
-//                        {
-//                            result.Add(ent);
-//                        }
-//                    }
+    //            var result = new List<Entity>();
+    //            var document = Editor.Document;
+    //            using (var docLock = document.LockDocument())
+    //            {
+    //                using (var transaction = document.Database.TransactionManager.StartTransaction())
+    //                {
+    //                    var modelSpace = (BlockTableRecord)transaction.GetObject(SymbolUtilityServices.GetBlockModelSpaceId(document.Database), OpenMode.ForWrite);
+    //                    foreach (var pair in intersects)
+    //                    {
+    //                        var ents = DummySplitCurve(pair.Key, pair.Value, modelSpace, transaction, false);
+    //                        foreach (Entity ent in ents)
+    //                        {
+    //                            result.Add(ent);
+    //                        }
+    //                    }
 
-//                    foreach (var pair in selfIntersects)
-//                    {
-//                        var ents = DummySplitCurve(pair.Key, pair.Value, modelSpace, transaction, true);
-//                        foreach (Entity ent in ents)
-//                        {
-//                            result.Add(ent);
-//                        }
-//                    }
+    //                    foreach (var pair in selfIntersects)
+    //                    {
+    //                        var ents = DummySplitCurve(pair.Key, pair.Value, modelSpace, transaction, true);
+    //                        foreach (Entity ent in ents)
+    //                        {
+    //                            result.Add(ent);
+    //                        }
+    //                    }
 
-//                    transaction.Commit();
-//                }
-//            }
-//            return result;
-//        }
+    //                    transaction.Commit();
+    //                }
+    //            }
+    //            return result;
+    //        }
 
-//        private IEnumerable<ObjectId> SplitCurve(ObjectId objId, IEnumerable<Point3d> points, BlockTableRecord modelSpace,
-//            Transaction transaction, bool selfIntersect, bool eraseOld)
-//        {
-//            var curve = transaction.GetObject(objId, OpenMode.ForWrite) as Curve;
-//            if (curve == null)
-//                return new ObjectId[0];
+    //        private IEnumerable<ObjectId> SplitCurve(ObjectId objId, IEnumerable<Point3d> points, BlockTableRecord modelSpace,
+    //            Transaction transaction, bool selfIntersect, bool eraseOld)
+    //        {
+    //            var curve = transaction.GetObject(objId, OpenMode.ForWrite) as Curve;
+    //            if (curve == null)
+    //                return new ObjectId[0];
 
-//            var result = new List<ObjectId>();
-//            DBObjectCollection spliltCurves = null;
-//            if (selfIntersect)
-//            {
-//                spliltCurves = CurveUtils.SplitSelfIntersectCurve(curve, points.ToArray(), transaction);
-//            }
-//            else
-//            {
-//                spliltCurves = CurveUtils.SplitCurve(curve, points.ToArray());
-//            }
+    //            var result = new List<ObjectId>();
+    //            DBObjectCollection spliltCurves = null;
+    //            if (selfIntersect)
+    //            {
+    //                spliltCurves = CurveUtils.SplitSelfIntersectCurve(curve, points.ToArray(), transaction);
+    //            }
+    //            else
+    //            {
+    //                spliltCurves = CurveUtils.SplitCurve(curve, points.ToArray());
+    //            }
 
-//            // The splitted curves has the same layer with original curve, 
-//            // so we needn't set its layer explicitly.
-//            foreach (Curve splitCurve in spliltCurves)
-//            {
-//                var id  = modelSpace.AppendEntity(splitCurve);
-//                transaction.AddNewlyCreatedDBObject(splitCurve, true);
-//                result.Add(id);
-//            }
+    //            // The splitted curves has the same layer with original curve,
+    //            // so we needn't set its layer explicitly.
+    //            foreach (Curve splitCurve in spliltCurves)
+    //            {
+    //                var id  = modelSpace.AppendEntity(splitCurve);
+    //                transaction.AddNewlyCreatedDBObject(splitCurve, true);
+    //                result.Add(id);
+    //            }
 
-//            if (spliltCurves.Count > 0)
-//            {
-//                if (eraseOld)
-//                {
-//                    // Erase the old one
-//                    curve.Erase();
-//                }
-//            }
-//            else
-//            {
-//                result.Add(curve.Id);
-//            }
-//            return result;
-//        }
+    //            if (spliltCurves.Count > 0)
+    //            {
+    //                if (eraseOld)
+    //                {
+    //                    // Erase the old one
+    //                    curve.Erase();
+    //                }
+    //            }
+    //            else
+    //            {
+    //                result.Add(curve.Id);
+    //            }
+    //            return result;
+    //        }
 
-//        private DBObjectCollection DummySplitCurve(ObjectId objId, IEnumerable<Point3d> points, 
-//            BlockTableRecord modelSpace, Transaction transaction, bool selfIntersect)
-//        {
-//            var curve = transaction.GetObject(objId, OpenMode.ForWrite) as Curve;
-//            if (curve == null)
-//                return new DBObjectCollection();
+    //        private DBObjectCollection DummySplitCurve(ObjectId objId, IEnumerable<Point3d> points,
+    //            BlockTableRecord modelSpace, Transaction transaction, bool selfIntersect)
+    //        {
+    //            var curve = transaction.GetObject(objId, OpenMode.ForWrite) as Curve;
+    //            if (curve == null)
+    //                return new DBObjectCollection();
 
-//            var result = new List<ObjectId>();
-//            DBObjectCollection spliltCurves = null;
-//            if (selfIntersect)
-//            {
-//                spliltCurves = CurveUtils.SplitSelfIntersectCurve(curve, points.ToArray(), transaction);
-//            }
-//            else
-//            {
-//                spliltCurves = CurveUtils.SplitCurve(curve, points.ToArray());
-//            }
-//            return spliltCurves;
-//        }
+    //            var result = new List<ObjectId>();
+    //            DBObjectCollection spliltCurves = null;
+    //            if (selfIntersect)
+    //            {
+    //                spliltCurves = CurveUtils.SplitSelfIntersectCurve(curve, points.ToArray(), transaction);
+    //            }
+    //            else
+    //            {
+    //                spliltCurves = CurveUtils.SplitCurve(curve, points.ToArray());
+    //            }
+    //            return spliltCurves;
+    //        }
 
-//        private void GroupIntersectPoints(out Dictionary<ObjectId, List<Point3d>> intersects, 
-//            out Dictionary<ObjectId, List<Point3d>> selfIntersects)
-//        {
-//            intersects = new Dictionary<ObjectId, List<Point3d>>();
-//            selfIntersects = new Dictionary<ObjectId, List<Point3d>>();
+    //        private void GroupIntersectPoints(out Dictionary<ObjectId, List<Point3d>> intersects,
+    //            out Dictionary<ObjectId, List<Point3d>> selfIntersects)
+    //        {
+    //            intersects = new Dictionary<ObjectId, List<Point3d>>();
+    //            selfIntersects = new Dictionary<ObjectId, List<Point3d>>();
 
-//            foreach (var crossingInfo in _crossingInfos)
-//            {
-//                // Self intersection
-//                if (crossingInfo.SourceId == crossingInfo.TargetId)
-//                {
-//                    // Move points from intersects to selfIntersects.
-//                    List<Point3d> points = null;
-//                    if (intersects.TryGetValue(crossingInfo.SourceId, out points))
-//                    {
-//                        intersects.Remove(crossingInfo.SourceId);
+    //            foreach (var crossingInfo in _crossingInfos)
+    //            {
+    //                // Self intersection
+    //                if (crossingInfo.SourceId == crossingInfo.TargetId)
+    //                {
+    //                    // Move points from intersects to selfIntersects.
+    //                    List<Point3d> points = null;
+    //                    if (intersects.TryGetValue(crossingInfo.SourceId, out points))
+    //                    {
+    //                        intersects.Remove(crossingInfo.SourceId);
 
-//                        if (selfIntersects.ContainsKey(crossingInfo.SourceId))
-//                        {
-//                            var targetPoints = selfIntersects[crossingInfo.SourceId];
-//                            foreach (var point in points)
-//                            {
-//                                if (!targetPoints.Contains(point))
-//                                    targetPoints.Add(point);
-//                            }
-//                        }
-//                        else
-//                        {
-//                            selfIntersects[crossingInfo.SourceId] = points;
-//                        }
+    //                        if (selfIntersects.ContainsKey(crossingInfo.SourceId))
+    //                        {
+    //                            var targetPoints = selfIntersects[crossingInfo.SourceId];
+    //                            foreach (var point in points)
+    //                            {
+    //                                if (!targetPoints.Contains(point))
+    //                                    targetPoints.Add(point);
+    //                            }
+    //                        }
+    //                        else
+    //                        {
+    //                            selfIntersects[crossingInfo.SourceId] = points;
+    //                        }
 
-//                        // Add new ones.
-//                        var selfIntersectPoints = selfIntersects[crossingInfo.SourceId];
-//                        foreach (var point in crossingInfo.IntersectPoints)
-//                        {
-//                            if (!selfIntersectPoints.Contains(point))
-//                                selfIntersectPoints.Add(point);
-//                        }
-//                    }
-//                    else // Add it to selfIntersects.
-//                    {
-//                        selfIntersects[crossingInfo.SourceId] = new List<Point3d>(crossingInfo.IntersectPoints);
-//                    }
-//                }
-//                else // Non-self-intersection
-//                {
-//                    if (selfIntersects.ContainsKey(crossingInfo.SourceId))
-//                    {
-//                        var points = selfIntersects[crossingInfo.SourceId];
-//                        foreach (var point in crossingInfo.IntersectPoints)
-//                        {
-//                            if (!points.Contains(point))
-//                                points.Add(point);
-//                        }
-//                    }
-//                    else if (!intersects.ContainsKey(crossingInfo.SourceId))
-//                    {
-//                        intersects[crossingInfo.SourceId] = new List<Point3d>(crossingInfo.IntersectPoints);
-//                    }
-//                    else
-//                    {
-//                        var points = intersects[crossingInfo.SourceId];
-//                        foreach (var point in crossingInfo.IntersectPoints)
-//                        {
-//                            if (!points.Contains(point))
-//                                points.Add(point);
-//                        }
-//                    }
+    //                        // Add new ones.
+    //                        var selfIntersectPoints = selfIntersects[crossingInfo.SourceId];
+    //                        foreach (var point in crossingInfo.IntersectPoints)
+    //                        {
+    //                            if (!selfIntersectPoints.Contains(point))
+    //                                selfIntersectPoints.Add(point);
+    //                        }
+    //                    }
+    //                    else // Add it to selfIntersects.
+    //                    {
+    //                        selfIntersects[crossingInfo.SourceId] = new List<Point3d>(crossingInfo.IntersectPoints);
+    //                    }
+    //                }
+    //                else // Non-self-intersection
+    //                {
+    //                    if (selfIntersects.ContainsKey(crossingInfo.SourceId))
+    //                    {
+    //                        var points = selfIntersects[crossingInfo.SourceId];
+    //                        foreach (var point in crossingInfo.IntersectPoints)
+    //                        {
+    //                            if (!points.Contains(point))
+    //                                points.Add(point);
+    //                        }
+    //                    }
+    //                    else if (!intersects.ContainsKey(crossingInfo.SourceId))
+    //                    {
+    //                        intersects[crossingInfo.SourceId] = new List<Point3d>(crossingInfo.IntersectPoints);
+    //                    }
+    //                    else
+    //                    {
+    //                        var points = intersects[crossingInfo.SourceId];
+    //                        foreach (var point in crossingInfo.IntersectPoints)
+    //                        {
+    //                            if (!points.Contains(point))
+    //                                points.Add(point);
+    //                        }
+    //                    }
 
-//                    if (selfIntersects.ContainsKey(crossingInfo.TargetId))
-//                    {
-//                        var points = selfIntersects[crossingInfo.TargetId];
-//                        foreach (var point in crossingInfo.IntersectPoints)
-//                        {
-//                            if (!points.Contains(point))
-//                                points.Add(point);
-//                        }
-//                    }
-//                    else if (!intersects.ContainsKey(crossingInfo.TargetId))
-//                    {
-//                        intersects[crossingInfo.TargetId] = new List<Point3d>(crossingInfo.IntersectPoints);
-//                    }
-//                    else
-//                    {
-//                        var points = intersects[crossingInfo.TargetId];
-//                        foreach (var point in crossingInfo.IntersectPoints)
-//                        {
-//                            if (!points.Contains(point))
-//                                points.Add(point);
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
+    //                    if (selfIntersects.ContainsKey(crossingInfo.TargetId))
+    //                    {
+    //                        var points = selfIntersects[crossingInfo.TargetId];
+    //                        foreach (var point in crossingInfo.IntersectPoints)
+    //                        {
+    //                            if (!points.Contains(point))
+    //                                points.Add(point);
+    //                        }
+    //                    }
+    //                    else if (!intersects.ContainsKey(crossingInfo.TargetId))
+    //                    {
+    //                        intersects[crossingInfo.TargetId] = new List<Point3d>(crossingInfo.IntersectPoints);
+    //                    }
+    //                    else
+    //                    {
+    //                        var points = intersects[crossingInfo.TargetId];
+    //                        foreach (var point in crossingInfo.IntersectPoints)
+    //                        {
+    //                            if (!points.Contains(point))
+    //                                points.Add(point);
+    //                        }
+    //                    }
+    //                }
+    //            }
+    //        }
+    //    }
 
     /// <summary>
-    /// 
+    ///
     /// Note : Similar to AutoSplitCurves in FishingBait. But there are some differences in logic.
     /// </summary>
     [Obsolete]
@@ -309,7 +309,7 @@ namespace LS.MapClean.Addin.Algorithms
     {
         private double _tolerance = 0.01;
         // TODO: Will be updated in future.
-        //private List<string> _layers = new List<string>(){"0"}; 
+        //private List<string> _layers = new List<string>(){"0"};
 
         public BreakCrossingObjects(Editor editor, double tolerance)
             : base(editor)
@@ -335,7 +335,9 @@ namespace LS.MapClean.Addin.Algorithms
         public void Fix()
         {
             if (CrossingPoints == null || !CrossingPoints.Any())
+            {
                 return;
+            }
 
             var database = base.Editor.Document.Database;
             // 通过每条线上的交叉点来分割线
@@ -354,8 +356,11 @@ namespace LS.MapClean.Addin.Algorithms
                         foreach (DBObject splitedCurveObj in splitedCurves)
                         {
                             var splitedCurve = splitedCurveObj as Entity;
-                            if(splitedCurve == null)
+                            if (splitedCurve == null)
+                            {
                                 continue;
+                            }
+
                             modelSpace.AppendEntity(splitedCurve);
                             trans.AddNewlyCreatedDBObject(splitedCurve, true);
                         }
@@ -392,15 +397,15 @@ namespace LS.MapClean.Addin.Algorithms
                     }
 
                     // If none of the points in sortedPoints is not larger than point, add point to the tail.
-                    if(inserted == false)
+                    if (inserted == false)
+                    {
                         sortedPoints.Add(point);
-
+                    }
                 }
             }
 
             return sortedPoints;
         }
-
 
         private IEnumerable<CurveCrossingPoints> GetCrossingPointsesForCurves()
         {
@@ -417,7 +422,9 @@ namespace LS.MapClean.Addin.Algorithms
                 foreach (var objectId in modelSpace)
                 {
                     if (!objectId.IsValid)
+                    {
                         continue;
+                    }
 
                     // Get all specified layers curves from modelspace.
                     var curve = trans.GetObject(objectId, OpenMode.ForRead) as Curve;
@@ -435,7 +442,9 @@ namespace LS.MapClean.Addin.Algorithms
                 {
                     var currentCurve = trans.GetObject(curveId, OpenMode.ForRead) as Curve;
                     if (currentCurve == null)
+                    {
                         continue;
+                    }
 
                     var allIntersectPoints = new Point3dCollection();
                     var boundingBoxEntityIds = EditorUtils.SelectObjectsByEntityBoundingBox(base.Editor, SelectionFilterUtils.OnlySelectCurve(), currentCurve, _tolerance * 2);
@@ -445,7 +454,9 @@ namespace LS.MapClean.Addin.Algorithms
                     {
                         var curve = trans.GetObject(boundingBoxEntityId, OpenMode.ForRead) as Curve;
                         if (curve == null || (curve.ObjectId != ObjectId.Null && curve.ObjectId == currentCurve.ObjectId))
+                        {
                             continue;
+                        }
 
                         currentCurve.IntersectWith(curve, Intersect.OnBothOperands, points, IntPtr.Zero, IntPtr.Zero);
 
@@ -484,7 +495,9 @@ namespace LS.MapClean.Addin.Algorithms
 
             var curve = dbObject as Curve;
             if (curve == null)
+            {
                 return splitPoints;
+            }
 
             foreach (Point3d point in potentailPoints)
             {
@@ -494,25 +507,31 @@ namespace LS.MapClean.Addin.Algorithms
                 {
                     bool isPointOnCurve = GeometryUtils.IsPointOnCurveGCP(curve, point);
                     if (isPointOnCurve)
+                    {
                         splitPoints.Add(point);
+                    }
                 }
             }
             return splitPoints;
         }
     }
 
-    class CurveSegmentForQuadTree : CurveSegment, IQuadObject
+    internal class CurveSegmentForQuadTree : CurveSegment, IQuadObject
     {
         private const double _buffer = 0.01;
+
         /// <summary>
         /// IQuadObject
         /// </summary>
-        public Rect Bounds 
+        public Rect Bounds
         {
             get
             {
-                if(LineSegment == null)
-                    return new Rect(0,0,0,0);
+                if (LineSegment == null)
+                {
+                    return new Rect(0, 0, 0, 0);
+                }
+
                 var extents = GetExtents(LineSegment);
                 return extents;
             }
@@ -532,7 +551,7 @@ namespace LS.MapClean.Addin.Algorithms
 
             var points = new Point2d[]
             {
-                lineSegment.StartPoint, 
+                lineSegment.StartPoint,
                 lineSegment.EndPoint
             };
             foreach (var point2D in points)
@@ -549,12 +568,14 @@ namespace LS.MapClean.Addin.Algorithms
     public class BreakCrossingObjectsQuadTree : AlgorithmWithEditor
     {
         private IEnumerable<CurveCrossingInfo> _crossingInfos;
+
         public IEnumerable<CurveCrossingInfo> CrossingInfos
         {
             get { return _crossingInfos; }
         }
 
         private IEnumerable<CurveCrossingInfo> _duplicateEntities;
+
         public IEnumerable<CurveCrossingInfo> DuplicateEntities
         {
             get { return _duplicateEntities; }
@@ -568,7 +589,7 @@ namespace LS.MapClean.Addin.Algorithms
         public override void Check(IEnumerable<ObjectId> selectedObjectIds)
         {
             // Get intersection info from segmentPairs
-            var intersections = SearchRealIntersections(selectedObjectIds, includeInline:true);
+            var intersections = SearchRealIntersections(selectedObjectIds, includeInline: true);
             //
             var crossInfos = GetCrossingInfosFromIntersections(intersections);
             _crossingInfos = FilterCrossInfos(crossInfos, out _duplicateEntities);
@@ -577,7 +598,9 @@ namespace LS.MapClean.Addin.Algorithms
         public IEnumerable<IntersectionInfo> SearchRealIntersections(IEnumerable<ObjectId> objectIds, bool includeInline)
         {
             if (objectIds == null || !objectIds.Any())
+            {
                 return new List<IntersectionInfo>();
+            }
 
             // 用碰撞检测的方法查找相邻的线段
             var segments = GetAllCurveSegmentsForQuadTree(objectIds);
@@ -607,11 +630,15 @@ namespace LS.MapClean.Addin.Algorithms
                 foreach (var nearSegment in nearSegments)
                 {
                     if (nearSegment == segment)
+                    {
                         continue;
+                    }
 
                     if (segmentPairs.Contains(new KeyValuePair<CurveSegment, CurveSegment>(segment, nearSegment)) ||
                         segmentPairs.Contains(new KeyValuePair<CurveSegment, CurveSegment>(nearSegment, segment)))
+                    {
                         continue;
+                    }
 
                     //// 预处理一下，减少计算量
                     //if (IsSegmentOnSameSide(segment.LineSegment, nearSegment.LineSegment))
@@ -633,7 +660,6 @@ namespace LS.MapClean.Addin.Algorithms
             var targetStart = target.StartPoint;
             var targetEnd = target.EndPoint;
 
-           
             // Allan: I found IsLeft is not good to determine whether a point is left or right
             // if the segment is too long, so divide it by length.
             var startVal = ComputerGraphics.IsLeft(sourceStart, sourceEnd, targetStart);
@@ -656,7 +682,9 @@ namespace LS.MapClean.Addin.Algorithms
                 {
                     var curve = transaction.GetObject(objId, OpenMode.ForRead) as Curve;
                     if (curve == null)
+                    {
                         continue;
+                    }
 
                     var segments = CurveUtils.GetSegment2dsOfCurve(curve, transaction);
                     originSegments.AddRange(segments.Select(it => new CurveSegmentForQuadTree()
@@ -674,7 +702,9 @@ namespace LS.MapClean.Addin.Algorithms
         {
             var result = new Dictionary<ObjectId, IEnumerable<ObjectId>>();
             if (_crossingInfos == null || !_crossingInfos.Any())
+            {
                 return result;
+            }
 
             // Group intersect points by ObjectId.
             Dictionary<ObjectId, List<Point3d>> intersects = null;
@@ -708,7 +738,9 @@ namespace LS.MapClean.Addin.Algorithms
         public IEnumerable<Entity> DummyFix()
         {
             if (_crossingInfos == null || !_crossingInfos.Any())
+            {
                 return new Entity[0];
+            }
 
             // Group intersect points by ObjectId.
             Dictionary<ObjectId, List<Point3d>> intersects = null;
@@ -751,7 +783,9 @@ namespace LS.MapClean.Addin.Algorithms
         {
             var curve = transaction.GetObject(objId, OpenMode.ForWrite) as Curve;
             if (curve == null)
+            {
                 return new ObjectId[0];
+            }
 
             var result = new List<ObjectId>();
             DBObjectCollection spliltCurves = null;
@@ -764,7 +798,7 @@ namespace LS.MapClean.Addin.Algorithms
                 spliltCurves = CurveUtils.SplitCurve(curve, points.ToArray());
             }
 
-            // The splitted curves has the same layer with original curve, 
+            // The splitted curves has the same layer with original curve,
             // so we needn't set its layer explicitly.
             foreach (Curve splitCurve in spliltCurves)
             {
@@ -793,7 +827,9 @@ namespace LS.MapClean.Addin.Algorithms
         {
             var curve = transaction.GetObject(objId, OpenMode.ForWrite) as Curve;
             if (curve == null)
+            {
                 return new DBObjectCollection();
+            }
 
             var result = new List<ObjectId>();
             DBObjectCollection spliltCurves = null;
@@ -831,7 +867,9 @@ namespace LS.MapClean.Addin.Algorithms
                             foreach (var point in points)
                             {
                                 if (!targetPoints.Contains(point))
+                                {
                                     targetPoints.Add(point);
+                                }
                             }
                         }
                         else
@@ -844,7 +882,9 @@ namespace LS.MapClean.Addin.Algorithms
                         foreach (var point in crossingInfo.IntersectPoints)
                         {
                             if (!selfIntersectPoints.Contains(point))
+                            {
                                 selfIntersectPoints.Add(point);
+                            }
                         }
                     }
                     else // Add it to selfIntersects.
@@ -860,7 +900,9 @@ namespace LS.MapClean.Addin.Algorithms
                         foreach (var point in crossingInfo.IntersectPoints)
                         {
                             if (!points.Contains(point))
+                            {
                                 points.Add(point);
+                            }
                         }
                     }
                     else if (!intersects.ContainsKey(crossingInfo.SourceId))
@@ -873,7 +915,9 @@ namespace LS.MapClean.Addin.Algorithms
                         foreach (var point in crossingInfo.IntersectPoints)
                         {
                             if (!points.Contains(point))
+                            {
                                 points.Add(point);
+                            }
                         }
                     }
 
@@ -883,7 +927,9 @@ namespace LS.MapClean.Addin.Algorithms
                         foreach (var point in crossingInfo.IntersectPoints)
                         {
                             if (!points.Contains(point))
+                            {
                                 points.Add(point);
+                            }
                         }
                     }
                     else if (!intersects.ContainsKey(crossingInfo.TargetId))
@@ -896,7 +942,9 @@ namespace LS.MapClean.Addin.Algorithms
                         foreach (var point in crossingInfo.IntersectPoints)
                         {
                             if (!points.Contains(point))
+                            {
                                 points.Add(point);
+                            }
                         }
                     }
                 }
@@ -916,18 +964,24 @@ namespace LS.MapClean.Addin.Algorithms
                 {
                     var val = dictionary[pair1];
                     if (!val.Contains(info.IntersectPoint))
+                    {
                         val.Add(info.IntersectPoint);
+                    }
                 }
                 else if (dictionary.ContainsKey(pair2))
                 {
                     var val = dictionary[pair2];
                     if (!val.Contains(info.IntersectPoint))
+                    {
                         val.Add(info.IntersectPoint);
+                    }
                 }
                 else
                 {
-                    var list = new List<Point3d>();
-                    list.Add(info.IntersectPoint);
+                    var list = new List<Point3d>
+                    {
+                        info.IntersectPoint
+                    };
                     dictionary[pair1] = list;
                 }
             }
@@ -941,11 +995,12 @@ namespace LS.MapClean.Addin.Algorithms
 
         private IEnumerable<CurveCrossingInfo> FilterCrossInfos(IEnumerable<CurveCrossingInfo> crossInfos, out IEnumerable<CurveCrossingInfo> duplicateEntities)
         {
-            
             duplicateEntities = new List<CurveCrossingInfo>();
             var result = new List<CurveCrossingInfo>();
             if (crossInfos == null || !crossInfos.Any())
+            {
                 return result;
+            }
 
             var database = crossInfos.First().SourceId.Database;
             using (var transaction = database.TransactionManager.StartTransaction())
@@ -955,14 +1010,17 @@ namespace LS.MapClean.Addin.Algorithms
                     // Filter out duplicate entities
                     if (AreDuplicateEntities(curveCrossingInfo, transaction))
                     {
-                        ((List<CurveCrossingInfo>) duplicateEntities).Add(curveCrossingInfo);
+                        ((List<CurveCrossingInfo>)duplicateEntities).Add(curveCrossingInfo);
                         continue;
                     }
 
                     var sourcePoints = CurveUtils.GetCurveEndPoints(curveCrossingInfo.SourceId, transaction);
                     var targetPoints = new Point3d[0];
                     if (curveCrossingInfo.TargetId != curveCrossingInfo.SourceId)
+                    {
                         targetPoints = CurveUtils.GetCurveEndPoints(curveCrossingInfo.TargetId, transaction);
+                    }
+
                     sourcePoints = DistinctEndPoints(sourcePoints);
                     targetPoints = DistinctEndPoints(targetPoints);
 
@@ -974,7 +1032,9 @@ namespace LS.MapClean.Addin.Algorithms
                         // If curveCrossingInfo.SourceId == curveCrossingInfo.TargetId, it's a self intersection.
                         if (sourcePoints.Contains(point3D) && targetPoints.Contains(point3D) &&
                             curveCrossingInfo.SourceId != curveCrossingInfo.TargetId)
+                        {
                             continue;
+                        }
 
                         points.Add(point3D);
                     }
@@ -994,16 +1054,24 @@ namespace LS.MapClean.Addin.Algorithms
         private Point3d[] DistinctEndPoints(Point3d[] endPoints)
         {
             if (endPoints.Length != 2)
+            {
                 return endPoints;
+            }
+
             if (endPoints[0] == endPoints[1])
+            {
                 return new Point3d[] { endPoints[0] };
+            }
+
             return endPoints;
         }
 
         private bool AreDuplicateEntities(CurveCrossingInfo crossInfo, Transaction transaction)
         {
             if (crossInfo.SourceId == crossInfo.TargetId)
+            {
                 return false;
+            }
 
             // Check whether all the intersection points are curve's vertices.
             var sourceVertices = CurveUtils.GetDistinctVertices(crossInfo.SourceId, transaction);
@@ -1011,15 +1079,21 @@ namespace LS.MapClean.Addin.Algorithms
             var sourceCount = sourceVertices.Count();
             var targetCount = targetVertices.Count();
             if (sourceCount != targetCount)
+            {
                 return false;
+            }
 
             if (sourceCount != crossInfo.IntersectPoints.Length)
+            {
                 return false;
+            }
 
             foreach (var point in crossInfo.IntersectPoints)
             {
                 if (!sourceVertices.Contains(point) || !targetVertices.Contains(point))
+                {
                     return false;
+                }
             }
             return true;
         }
@@ -1037,8 +1111,10 @@ namespace LS.MapClean.Addin.Algorithms
                 // 如果共线
                 if (source.LineSegment.IsColinearTo(target.LineSegment))
                 {
-                    if(includeInline)
+                    if (includeInline)
+                    {
                         AnalyzeColinearSegments(source, target, result, possibleSelfIntersects);
+                    }
                 }
                 else
                 {
@@ -1069,13 +1145,19 @@ namespace LS.MapClean.Addin.Algorithms
                     {
                         var curveVertex = new CurveVertex(intersectPoint, source.EntityId);
                         if (possibleSelfIntersects.Contains(curveVertex))
+                        {
                             result.Add(new IntersectionInfo(source.EntityId, ExtendType.None, target.EntityId, ExtendType.None, intersectPoint));
+                        }
                         else
+                        {
                             possibleSelfIntersects.Add(new CurveVertex(intersectPoint, source.EntityId));
+                        }
                     }
                     else
+                    {
                         result.Add(new IntersectionInfo(source.EntityId, ExtendType.None, target.EntityId,
                             ExtendType.None, intersectPoint));
+                    }
                 }
             }
 
@@ -1093,10 +1175,14 @@ namespace LS.MapClean.Addin.Algorithms
                     if (endParam.EqualsWithTolerance(0.0) || endParam.EqualsWithTolerance(1.0))
                     {
                         var curveVertex = new CurveVertex(intersectPoint, source.EntityId);
-                        if(possibleSelfIntersects.Contains(curveVertex))
+                        if (possibleSelfIntersects.Contains(curveVertex))
+                        {
                             result.Add(new IntersectionInfo(source.EntityId, ExtendType.None, target.EntityId, ExtendType.None, intersectPoint));
+                        }
                         else
+                        {
                             possibleSelfIntersects.Add(new CurveVertex(intersectPoint, source.EntityId));
+                        }
                     }
                     else
                     {
@@ -1131,7 +1217,9 @@ namespace LS.MapClean.Addin.Algorithms
             // 不共线的情况
             var points = sourceSeg.IntersectWith(targetSeg);
             if (points == null || points.Length <= 0)
+            {
                 return;
+            }
 
             var intersectPoint = points[0];
             var intersectPoint3D = new Point3d(intersectPoint.X, intersectPoint.Y, 0.0d);
@@ -1154,9 +1242,13 @@ namespace LS.MapClean.Addin.Algorithms
                     // 自相交点
                     var curveVertex = new CurveVertex(intersectPoint3D, source.EntityId);
                     if (possibleSelfIntersects.Contains(curveVertex))
+                    {
                         result.Add(new IntersectionInfo(source.EntityId, ExtendType.None, target.EntityId, ExtendType.None, intersectPoint3D));
+                    }
                     else
+                    {
                         possibleSelfIntersects.Add(new CurveVertex(intersectPoint3D, source.EntityId));
+                    }
                 }
             }
         }
