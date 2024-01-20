@@ -29,7 +29,7 @@ namespace LS.MapClean.Addin.MapClean
             var watch = Stopwatch.StartNew();
 
             IEnumerable<CheckResult> result = null;
-            using(var waitCursor = new WaitCursorSwitcher())
+            using (var waitCursor = new WaitCursorSwitcher())
             using (var switcher = new SafeToleranceOverride())
             {
                 result = CheckImpl(selectedObjectIds);
@@ -50,14 +50,11 @@ namespace LS.MapClean.Addin.MapClean
         {
             if (checkResult.SourceIds != null)
             {
-                
                 foreach (var sourceId in checkResult.SourceIds)
                 {
-                    if (!sourceId.IsValid || sourceId.IsErased)
-                    {
-                        resultIds = new List<ObjectId>();
-                        return Status.Invalid;
-                    }
+                    if (sourceId.IsValid && !sourceId.IsErased) continue;
+                    resultIds = new List<ObjectId>();
+                    return Status.Invalid;
                 }
             }
             using (var siwtcher = new SafeToleranceOverride())

@@ -7,6 +7,7 @@ using NetTopologySuite.Geometries;
 namespace TopologyTools.PolylineSimplify
 {
     /// <summary>
+    /// 多边形曲线简化之Douglas-Peucker 格拉斯-普克算法<br/>
     /// http://www.namekdev.net/2014/06/iterative-version-of-ramer-douglas-peucker-line-simplification-algorithm/
     /// https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
     /// The Ramer–Douglas–Peucker algorithm (RDP) is an algorithm for reducing the number of points in a curve

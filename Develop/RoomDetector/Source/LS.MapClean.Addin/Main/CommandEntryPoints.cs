@@ -126,7 +126,7 @@ namespace LS.MapClean.Addin.Main
         }
 
         /// <summary>
-        /// 清理多段线顶点
+        /// 清理多段线顶点 多(D)段(D)线(X)重(C)叠(D)检查(C)
         /// </summary>
         [CommandMethod(GroupName, "DDXCDC", CommandFlags.Modal)]
         public static void FindDuplicateVerticesConsole()
@@ -452,7 +452,7 @@ namespace LS.MapClean.Addin.Main
         }
 
         /// <summary>
-        /// 纠合极近点
+        /// 纠合极近点 即修正顶点误差
         /// </summary>
         [CommandMethod(GroupName, "JHJJD", CommandFlags.Modal)]
         public static void RectifyNearVerticesConsole()

@@ -129,6 +129,7 @@
     <Compile Include="Algorithms\CrotchPointSearcher.cs" />
     <Compile Include="Algorithms\Curve2dBspBuilder.cs" />
     <Compile Include="Algorithms\Curve2dBspTree.cs" />
+    <Compile Include="Algorithms\CurveVertex.cs" />
     <Compile Include="Algorithms\CurveVertexKdTree.cs" />
     <Compile Include="Algorithms\DrawingPartitioner.cs" />
     <Compile Include="Algorithms\LinkedPoint.cs" />
@@ -444,6 +445,7 @@
     <None Include="DocumentImages\多段线洞口检查.png" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="DocumentImages\KdTree.png" />
     <Content Include="DocumentImages\SearchClosedLoop.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

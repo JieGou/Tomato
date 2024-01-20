@@ -47,7 +47,7 @@ namespace LS.MapClean.Addin.Algorithms
         /// </summary>
         public bool IsLeft { get; internal set; }
     }
-
+    //<image url="$(ProjectDir)\DocumentImages\KdTree.png"/>
     /// <summary>
     /// Provides methods to organize 3d points in a Kd tree structure to speed up the search of neighbours.
     /// A boolean constructor parameter (ignoreZ) indicates if the resulting Kd tree is a 3d tree or a 2d tree.
@@ -58,12 +58,23 @@ namespace LS.MapClean.Addin.Algorithms
     public class CurveVertexKdTree<T>
     {
         #region Private fields
-
+        /// <summary>
+        /// k Dimension Tree中数的K维空间数
+        /// </summary>
         private int _dimension;
         private int _parallelDepth;
+        /// <summary>
+        /// 忽略Z值
+        /// </summary>
         private bool _ignoreZ;
+        /// <summary>
+        /// 获取点距离委托
+        /// </summary>
         private Func<double[], double[], double> _sqrDist;
-        private Func<T, double[]> _pointSelector; 
+        /// <summary>
+        /// 获取点的委托，封装的方法把泛型类型返回实数(XYZ坐标点)数组
+        /// </summary>
+        private Func<T, double[]> _pointSelector;
         #endregion
 
         #region Constructor
@@ -72,6 +83,7 @@ namespace LS.MapClean.Addin.Algorithms
         /// Creates an new instance of Point3dTree.
         /// </summary>
         /// <param name="vertices">The Point3d collection to fill the tree.</param>
+        /// <param name="pointSelector">获取点的委托</param>
         /// <param name="ignoreZ">A value indicating if the Z coordinate of points is ignored
         /// (as if all points were projected to the XY plane).</param>
         public CurveVertexKdTree(IEnumerable<T> vertices, Func<T, double[]> pointSelector, bool ignoreZ = false)
@@ -89,11 +101,12 @@ namespace LS.MapClean.Addin.Algorithms
                 this._sqrDist = SqrDistance2d;
             else
                 this._sqrDist = SqrDistance3d;
+
             int numProc = System.Environment.ProcessorCount;
             this._parallelDepth = -1;
             while (numProc >> ++this._parallelDepth > 1) ;
             var distinctVertices = vertices.Distinct().ToArray();
-            this.Root = Create(distinctVertices, 0, null, false, 0, distinctVertices.Length-1);
+            this.Root = Create(distinctVertices, 0, null, false, 0, distinctVertices.Length - 1);
         }
 
         #endregion
@@ -161,13 +174,13 @@ namespace LS.MapClean.Addin.Algorithms
         public IEnumerable<T> BoxedRange(double[] pt1, double[] pt2)
         {
             var lowerLeft = new double[]{
-                Math.Min(pt1[0], pt2[0]), 
-                Math.Min(pt1[1], pt2[1]), 
+                Math.Min(pt1[0], pt2[0]),
+                Math.Min(pt1[1], pt2[1]),
                 Math.Min(pt1[2], pt2[2])
             };
             var upperRight = new double[]{
-                Math.Max(pt1[0], pt2[0]), 
-                Math.Max(pt1[1], pt2[1]), 
+                Math.Max(pt1[0], pt2[0]),
+                Math.Max(pt1[1], pt2[1]),
                 Math.Max(pt1[2], pt2[2])
             };
             var vertices = new List<T>();
@@ -191,14 +204,23 @@ namespace LS.MapClean.Addin.Algorithms
 
         #region Private methods
 
-        private CurveVertexNode<T> Create(T[] vertices, int depth, CurveVertexNode<T> parent, bool isLeft,
-            int startIndex, int endIndex)
+        /// <summary>
+        /// 构造KdTree
+        /// </summary>
+        /// <param name="vertices">顶点集合</param>
+        /// <param name="depth">层</param>
+        /// <param name="parent">父节点</param>
+        /// <param name="isLeft">是否左侧</param>
+        /// <param name="startIndex">起始序号</param>
+        /// <param name="endIndex">末序号</param>
+        /// <returns>KdTree根顶点</returns>
+        private CurveVertexNode<T> Create(T[] vertices, int depth, CurveVertexNode<T> parent, bool isLeft, int startIndex, int endIndex)
         {
             int length = vertices.Length;
-            if (length == 0 || startIndex > endIndex) 
+            if (length == 0 || startIndex > endIndex)
                 return null;
 
-            if(startIndex == endIndex)
+            if (startIndex == endIndex)
                 return new CurveVertexNode<T>(vertices[startIndex]);
 
             int d = depth % this._dimension;
@@ -218,13 +240,13 @@ namespace LS.MapClean.Addin.Algorithms
             {
                 System.Threading.Tasks.Parallel.Invoke(
                    () => node.LeftChild = Create(vertices, depth + 1, node, true, startIndex, mid - 1),
-                   () => node.RightChild = Create(vertices, depth + 1, node, false, mid+1, endIndex)
+                   () => node.RightChild = Create(vertices, depth + 1, node, false, mid + 1, endIndex)
                 );
             }
             else
             {
                 node.LeftChild = Create(vertices, depth + 1, node, true, startIndex, mid - 1);
-                node.RightChild = Create(vertices, depth + 1, node, false, mid+1, endIndex);
+                node.RightChild = Create(vertices, depth + 1, node, false, mid + 1, endIndex);
             }
             return node;
         }
@@ -262,7 +284,7 @@ namespace LS.MapClean.Addin.Algorithms
 
         private void GetNeighboursAtDistance(double[] center, double radius, CurveVertexNode<T> node, List<T> vertices)
         {
-            if (node == null) 
+            if (node == null)
                 return;
             var current = node.Value;
             double dist = this._sqrDist(center, _pointSelector(current));
@@ -294,7 +316,7 @@ namespace LS.MapClean.Addin.Algorithms
 
         private void GetKNeighbours(double[] center, int number, CurveVertexNode<T> node, List<Tuple<double, T>> pairs)
         {
-            if (node == null) 
+            if (node == null)
                 return;
 
             var current = node.Value;
@@ -376,7 +398,7 @@ namespace LS.MapClean.Addin.Algorithms
 
         private void GetConnexions(CurveVertexNode<T> node, double radius, List<Tuple<T, T>> connexions)
         {
-            if (node == null) 
+            if (node == null)
                 return;
             var vertices = new List<T>();
             var center = node.Value;
@@ -412,13 +434,23 @@ namespace LS.MapClean.Addin.Algorithms
             if (node.IsLeft) return parent;
             return GetRightParent(parent);
         }
-
+        /// <summary>
+        /// 忽略Z值距离Sqr
+        /// </summary>
+        /// <param name="p1"></param>
+        /// <param name="p2"></param>
+        /// <returns></returns>
         private double SqrDistance2d(double[] p1, double[] p2)
         {
             return (p1[0] - p2[0]) * (p1[0] - p2[0]) +
                 (p1[1] - p2[1]) * (p1[1] - p2[1]);
         }
-
+        /// <summary>
+        /// 距离平方
+        /// </summary>
+        /// <param name="p1"></param>
+        /// <param name="p2"></param>
+        /// <returns></returns>
         private double SqrDistance3d(double[] p1, double[] p2)
         {
             return (p1[0] - p2[0]) * (p1[0] - p2[0]) +
@@ -433,6 +465,19 @@ namespace LS.MapClean.Addin.Algorithms
     {
         // Credit: Tony Tanzillo
         // http://www.theswamp.org/index.php?topic=44312.msg495808#msg495808
+        /// <summary>
+        /// Quick Select algorithm generic implementation<para/>
+        /// Rearranges the given array up to the k'th element 
+        /// (the median element) so that all values to the left
+        /// are <![CDATA[ < ]]> the median element. Returns the median element.
+        /// </summary>
+        /// <typeparam name="T">类型</typeparam>
+        /// <param name="items">给定的项集合</param>
+        /// <param name="compare">比较器</param>
+        /// <param name="startIndex">起始项序号</param>
+        /// <param name="endIndex">末项序号</param>
+        /// <returns>中间项</returns>
+        /// <exception cref="ArgumentException"></exception>
         public static T QuickSelectMedian<T>(this T[] items, Comparison<T> compare, int startIndex, int endIndex)
         {
             if (items == null || items.Length == 0)

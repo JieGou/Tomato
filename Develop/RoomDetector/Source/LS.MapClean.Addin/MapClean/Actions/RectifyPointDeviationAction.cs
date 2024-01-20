@@ -5,6 +5,9 @@ using LS.MapClean.Addin.Algorithms;
 
 namespace LS.MapClean.Addin.MapClean
 {
+    /// <summary>
+    /// 修正顶点误差 Action类
+    /// </summary>
     public class RectifyPointDeviationAction : MapCleanActionBase
     {
         public RectifyPointDeviationAction(Document document)

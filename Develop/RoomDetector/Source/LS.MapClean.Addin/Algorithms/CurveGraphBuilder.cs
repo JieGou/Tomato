@@ -12,67 +12,6 @@ using QuickGraph.Algorithms.Search;
 
 namespace LS.MapClean.Addin.Algorithms
 {
-    public struct CurveVertex
-    {
-        public CurveVertex(Point3d point, ObjectId objId)
-        {
-            _point = point;
-            _id = objId;
-        }
-
-        private Point3d _point;
-        public Point3d Point
-        {
-            get { return _point; }
-        }
-
-        private ObjectId _id;
-        public ObjectId Id
-        {
-            get { return _id; }
-        }
-
-        // Always create an override of Equals for struct
-        public override bool Equals(object obj)
-        {
-            if (obj.GetType() != typeof(CurveVertex))
-                return false;
-            var right = (CurveVertex)obj;
-            var result = Point.IsEqualTo(right.Point) && Id == right.Id;
-            return result;
-        }
-
-        public override int GetHashCode()
-        {
-            //http://stackoverflow.com/questions/7813687/right-way-to-implement-gethashcode-for-this-struct
-            unchecked
-            {
-                // 我们需要考虑精度的影响。
-                var x = (int)(Point.X);
-                var y = (int)(Point.Y);
-
-                var hash = 17;
-
-                // Suitable nullity checks etc, of course :)
-                hash = (23 * hash) + x.GetHashCode();
-                hash = (23 * hash) + y.GetHashCode();
-                hash = (23*hash) + Id.GetHashCode();
-                return hash;
-            }
-        }
-
-        // Override operator == and !=
-        public static bool operator ==(CurveVertex left, CurveVertex right)
-        {
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(CurveVertex left, CurveVertex right)
-        {
-            return !left.Equals(right);
-        }
-    }
-
     public class KdTreeCurveGraphBuilder
     {
         /// <summary>
@@ -184,7 +123,7 @@ namespace LS.MapClean.Addin.Algorithms
         {
             // Search none loop vertices.
             var noneLoopVertices = SearchNoneLoopVertices();
-            
+
             // Depth first search the graph, and find all the path end vertices.
             var result = new HashSet<CurveVertex>();
             var observer = new VertexPredecessorPathRecorderObserver<CurveVertex, SEdge<CurveVertex>>();
@@ -305,12 +244,12 @@ namespace LS.MapClean.Addin.Algorithms
             }
             return result;
         }
-        
+
         CurveVertex? GetRootVertex(IDictionary<CurveVertex, SEdge<CurveVertex>> predecessors, CurveVertex vertex)
         {
             CurveVertex? target = vertex;
             CurveVertex? source = null;
-            
+
             while (target != null)
             {
                 if (predecessors.ContainsKey(target.Value))
@@ -327,12 +266,19 @@ namespace LS.MapClean.Addin.Algorithms
         }
 
         #region Utils
-
+        /// <summary>
+        /// 构建<see cref="CurveVertex"/>的KdTree
+        /// </summary>
+        /// <param name="allIds"></param>
+        /// <param name="transaction"></param>
+        /// <param name="curveVertices"></param>
+        /// <param name="kdTree"></param>
         private void BuildCurveVertexKdTree(IEnumerable<ObjectId> allIds, Transaction transaction,
             out Dictionary<ObjectId, CurveVertex[]> curveVertices, out CurveVertexKdTree<CurveVertex> kdTree)
         {
             curveVertices = new Dictionary<ObjectId, CurveVertex[]>();
             kdTree = null;
+            //所有顶点
             var allVertices = new List<CurveVertex>();
             foreach (var id in allIds)
             {
@@ -346,9 +292,15 @@ namespace LS.MapClean.Addin.Algorithms
                 allVertices.AddRange(vertices);
             }
 
-            kdTree = new CurveVertexKdTree<CurveVertex>(allVertices, it=>it.Point.ToArray(), ignoreZ:true);
+            kdTree = new CurveVertexKdTree<CurveVertex>(allVertices, it => it.Point.ToArray(), ignoreZ: true);
         }
-
+        /// <summary>
+        /// 获取所有边
+        /// </summary>
+        /// <param name="allIds">所有图元id集合</param>
+        /// <param name="visitedIds">已遍历图元集合</param>
+        /// <param name="transaction"></param>
+        /// <returns></returns>
         private IEnumerable<SEdge<CurveVertex>> GetEdges(IEnumerable<ObjectId> allIds, HashSet<ObjectId> visitedIds, Transaction transaction)
         {
             Dictionary<ObjectId, CurveVertex[]> curveVertices = null;
@@ -390,11 +342,26 @@ namespace LS.MapClean.Addin.Algorithms
 
             return result;
         }
-
-        private IEnumerable<SEdge<CurveVertex>> VisitCurve(CurveVertex? sourceVertex, ObjectId id, IEnumerable<ObjectId> allIds,
-            HashSet<ObjectId> visitedIds, Stack<KeyValuePair<ObjectId, CurveVertex>> candidates, 
-            Dictionary<ObjectId, CurveVertex[]> curveVertices, CurveVertexKdTree<CurveVertex> kdTree,
-            Transaction transaction)
+        /// <summary>
+        /// 遍历kdTree
+        /// </summary>
+        /// <param name="sourceVertex">源节点</param>
+        /// <param name="id">(源节点)的图元id</param>
+        /// <param name="allIds">所有图元id集合</param>
+        /// <param name="visitedIds">已遍历过的id集合</param>
+        /// <param name="candidates"></param>
+        /// <param name="curveVertices"></param>
+        /// <param name="kdTree">kd树</param>
+        /// <param name="transaction"></param>
+        /// <returns></returns>
+        private IEnumerable<SEdge<CurveVertex>> VisitCurve(CurveVertex? sourceVertex,
+                                                           ObjectId id,
+                                                           IEnumerable<ObjectId> allIds,
+                                                           HashSet<ObjectId> visitedIds,
+                                                           Stack<KeyValuePair<ObjectId, CurveVertex>> candidates,
+                                                           Dictionary<ObjectId, CurveVertex[]> curveVertices,
+                                                           CurveVertexKdTree<CurveVertex> kdTree,
+                                                           Transaction transaction)
         {
             // No need to handle it.
             if (!curveVertices.ContainsKey(id))
@@ -402,19 +369,24 @@ namespace LS.MapClean.Addin.Algorithms
                 visitedIds.Add(id);
                 return new SEdge<CurveVertex>[0];
             }
-
+            //包含图元源id的节点数组
             var originVertices = curveVertices[id];
+            //点数组
             var points = originVertices.Select(it => it.Point).ToArray();
             // If none of the curve's end points is equal to the point, just return.
             // It means this curve is not a qualified one because it's not connected to sourceVertex.
             // Then it will be handled later because it belongs to another loop.
-            if (sourceVertex != null && points.Length > 0 && !points.Contains(sourceVertex.Value.Point))
+            CurveVertex sourceVertexValue = sourceVertex == null ? default : sourceVertex.Value;
+            if (sourceVertex != null && points.Length > 0 && !points.Contains(sourceVertexValue.Point))
             {
                 bool contains = false;
                 foreach (var point in points)
                 {
-                    if (point.IsEqualTo(sourceVertex.Value.Point))
+                    if (point.IsEqualTo(sourceVertexValue.Point))
+                    {
                         contains = true;
+                        break;
+                    }
                 }
 
                 if (!contains)
@@ -447,7 +419,7 @@ namespace LS.MapClean.Addin.Algorithms
             // Push vertex and adjacent curve into candidates
             foreach (var vertex in distinctVertices)
             {
-                if (sourceVertex != null && sourceVertex.Value.Point.IsEqualTo(vertex.Point))
+                if (sourceVertex != null && sourceVertexValue.Point.IsEqualTo(vertex.Point))
                     continue;
 
                 var adjacentVertices = kdTree.NearestNeighbours(vertex.Point.ToArray(), radius: 0.1);
@@ -491,11 +463,11 @@ namespace LS.MapClean.Addin.Algorithms
             {
                 for (int i = 0; i < distinctVertices.Count; i++)
                 {
-                    if (distinctVertices[i].Point.IsEqualTo(sourceVertex.Value.Point))
+                    if (distinctVertices[i].Point.IsEqualTo(sourceVertexValue.Point))
                     {
                         start = i;
                         // Add edge from sourceVertex to nearest point.
-                        result.Add(new SEdge<CurveVertex>(sourceVertex.Value, distinctVertices[start]));
+                        result.Add(new SEdge<CurveVertex>(sourceVertexValue, distinctVertices[start]));
                         break;
                     }
                 }
@@ -504,7 +476,7 @@ namespace LS.MapClean.Addin.Algorithms
             if (distinctVertices.Count == 1)
             {
                 // Allan 2015/05/06: Self loop won't be handled - to improve performance.
-                
+
                 // Self loop, create dummy vertex to let it to be a real loop
                 if (_includeSelfLoop)
                 {
@@ -553,7 +525,7 @@ namespace LS.MapClean.Addin.Algorithms
         #endregion
 
         #region Search All Loops
-        private VertexPredecessorRecorderObserver<CurveVertex, SEdge<CurveVertex>>  _observer;
+        private VertexPredecessorRecorderObserver<CurveVertex, SEdge<CurveVertex>> _observer;
         private List<SEdge<CurveVertex>[]> _allLoops = new List<SEdge<CurveVertex>[]>();
         public IEnumerable<SEdge<CurveVertex>[]> SearchLoops()
         {
@@ -593,7 +565,7 @@ namespace LS.MapClean.Addin.Algorithms
 
         private void OnDfsForwardOrCrossEdge(SEdge<CurveVertex> e)
         {
-            
+
         }
 
         private void OnDfsBackEdge(SEdge<CurveVertex> e)

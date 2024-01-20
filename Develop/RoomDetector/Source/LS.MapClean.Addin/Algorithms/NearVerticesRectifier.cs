@@ -9,6 +9,9 @@ using LS.MapClean.Addin.Utils;
 
 namespace LS.MapClean.Addin.Algorithms
 {
+    /// <summary>
+    /// 纠合极近点 即修正顶点误差
+    /// </summary>
     public class NearVerticesRectifier : AlgorithmWithDatabase
     {
         private double _tolerance = 0.00005;
@@ -67,7 +70,11 @@ namespace LS.MapClean.Addin.Algorithms
                     _nearVertices.Add(qualified);
             }
         }
-
+        /// <summary>
+        /// 纠合极近点 即修正顶点误差
+        /// </summary>
+        /// <param name="vertices"></param>
+        /// <param name="transaction"></param>
         public static void RectifyNearVertices(IEnumerable<CurveVertex> vertices, Transaction transaction)
         {
             Point3d? position = null;
