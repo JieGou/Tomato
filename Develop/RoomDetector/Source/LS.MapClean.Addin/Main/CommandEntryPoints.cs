@@ -16,6 +16,7 @@ using System.Windows.Documents;
 using DbxUtils.Extensions;
 using TopologyTools.ConvexHull;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
+using TopologyTools.Utils;
 
 namespace LS.MapClean.Addin.Main
 {
@@ -1232,6 +1233,27 @@ namespace LS.MapClean.Addin.Main
             currentDoc.Editor.WriteMessage("\n图形分区花费{0}毫秒\n", stopWatch.ElapsedMilliseconds);
         }
 
+        /// <summary>
+        /// 分割多段线
+        /// </summary>
+        [CommandMethod(GroupName, "SplitPl", CommandFlags.Modal)]
+        public static void SplitPolygon()
+        {
+            var currentDoc = Application.DocumentManager.MdiActiveDocument;
+            var editor = currentDoc.Editor;
+            var database = currentDoc.Database;
+
+            var plResult = editor.GetEntity("选择多段线");
+            if (plResult.Status != PromptStatus.OK) return;
+
+            var polylineObjId = plResult.ObjectId;
+
+            var getLineEntityResult = editor.GetEntity("选择直线");
+            if (getLineEntityResult.Status != PromptStatus.OK) return;
+
+            var lineObjId = getLineEntityResult.ObjectId;
+            var splitedPls = NtsUtils.SplitPolygon(polylineObjId, lineObjId);
+        }
         #region 2019年8月6日 15:09:20 陈杰添加
 
         //<image url="$(ProjectDir)\DocumentImages\SearchClosedLoop.png"/>
